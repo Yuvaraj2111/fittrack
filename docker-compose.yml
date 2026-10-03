@@ -1,0 +1,21 @@
+services:
+  api:
+    build: ./backend
+    environment:
+      FITTRACK_DATABASE_URL: sqlite:////data/fittrack.db
+      FITTRACK_SECRET_KEY: ${FITTRACK_SECRET_KEY:-change-this-in-production}
+      FITTRACK_CORS_ORIGINS: http://localhost:3000
+    volumes:
+      - fittrack-data:/data
+    ports:
+      - "8000:8000"
+  web:
+    build: ./frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+volumes:
+  fittrack-data:

@@ -1,0 +1,11 @@
+"use client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { Flag } from "lucide-react";
+import { toast } from "sonner";
+import { AppShell } from "@/components/app-shell";
+import { EmptyState, PageHeader, ProgressBar } from "@/components/page";
+import { api } from "@/lib/api";
+type Goal={id:number;title:string;goal_type:string;target:number;current:number;unit:string;active:boolean};
+function Goals(){const client=useQueryClient();const [title,setTitle]=useState("");const [target,setTarget]=useState("");const goals=useQuery({queryKey:["goals"],queryFn:()=>api<Goal[]>("/goals")});const add=useMutation({mutationFn:()=>api("/goals",{method:"POST",body:JSON.stringify({title,target:Number(target),current:0,goal_type:"habit",unit:""})}),onSuccess:()=>{setTitle("");setTarget("");toast.success("Goal created");client.invalidateQueries({queryKey:["goals"]});},onError:(e:Error)=>toast.error(e.message)});return <main className="content"><PageHeader eyebrow="Personal direction" title="Goals and habits" description="Set targets that support you. Missed entries are information, not failure."/><section className="card max-w-2xl p-5"><form className="grid gap-2 sm:grid-cols-[1fr_10rem_auto]" onSubmit={(e)=>{e.preventDefault();add.mutate();}}><input className="input" required value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="Goal or habit name"/><input className="input" type="number" min="1" required value={target} onChange={(e)=>setTarget(e.target.value)} placeholder="Target"/><button className="btn btn-primary">Create</button></form></section><section className="mt-5 grid gap-3 md:grid-cols-2">{goals.data?.length?goals.data.map((goal)=><article className="card p-5" key={goal.id}><div className="flex justify-between"><div><Flag size={18} className="text-teal-700"/><p className="mt-3 font-semibold">{goal.title}</p></div><p className="text-sm text-slate-500">{goal.current}/{goal.target} {goal.unit}</p></div><div className="mt-4"><ProgressBar value={goal.current} max={goal.target}/></div></article>):<div className="md:col-span-2"><EmptyState title="No active goals" detail="Create a flexible goal that is meaningful to you."/></div>}</section></main>}
+export default function GoalsPage(){return <AppShell><Goals/></AppShell>}

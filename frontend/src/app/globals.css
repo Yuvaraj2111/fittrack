@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* FitTrack design tokens. Colour always encodes a data category:
+   cobalt = training / protein, amber = energy / carbs, rose = fat / over target, mint = fibre / water. */
+:root {
+  color-scheme: light;
+  --chalk: #eef1f4; --surface: #ffffff; --line: #dde3ea; --line-strong: #c6cfda;
+  --ink: #18212e; --ink-2: #3c4859; --muted: #6a7687;
+  --cobalt: #2f4bd8; --cobalt-deep: #2539b0; --cobalt-tint: #eef1fd;
+  --amber: #f0a202; --rose: #e0445a; --mint: #1fa37a;
+  --radius-lg: 14px; --radius: 10px; --radius-sm: 7px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: var(--chalk); color: var(--ink); font-family: Barlow, system-ui, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 2px; }
+.font-display, h1, .num { font-family: "Barlow Condensed", Barlow, system-ui, sans-serif; }
+.num { font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+
+/* Shell */
+.app-grid { display: grid; grid-template-columns: 15.5rem 1fr; min-height: 100vh; }
+.sidebar { background: var(--ink); color: #dfe5ee; padding: 1.4rem .9rem 1rem; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; overflow-y: auto; }
+.brand { display: flex; align-items: center; gap: .6rem; padding: 0 .55rem; margin-bottom: 1.6rem; color: #fff; text-decoration: none; font-family: "Barlow Condensed", sans-serif; font-size: 1.55rem; font-weight: 700; letter-spacing: .01em; }
+.brand-mark { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; background: var(--cobalt); font-size: 1.1rem; }
+.nav-group + .nav-group { margin-top: 1.1rem; }
+.nav-group-label { padding: 0 .7rem .35rem; font-size: .78rem; color: #8592a5; }
+.nav-link { position: relative; display: flex; align-items: center; gap: .7rem; border-radius: var(--radius-sm); color: #b9c3d1; padding: .5rem .7rem; font-size: .93rem; font-weight: 500; text-decoration: none; background: none; border: 0; text-align: left; }
+.nav-link:hover { background: #222d3d; color: #fff; }
+.nav-link.active { background: #253247; color: #fff; }
+.nav-link.active::before { content: ""; position: absolute; left: -.9rem; top: .45rem; bottom: .45rem; width: 3px; border-radius: 0 3px 3px 0; background: var(--cobalt); }
+.sidebar-foot { margin-top: auto; padding-top: 1rem; border-top: 1px solid #2a3546; }
+.main { min-width: 0; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .8rem 2rem; border-bottom: 1px solid var(--line); background: rgba(238,241,244,.88); position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); }
+.avatar { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 700; text-decoration: none; font-size: .9rem; }
+.content { max-width: 1440px; margin: auto; padding: 2rem 2rem 3rem; }
+
+/* Surfaces */
+.card { border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+.card-flat { border-radius: var(--radius); background: #f5f7f9; }
+.input { width: 100%; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: .55rem .7rem; background: #fff; color: var(--ink); outline: none; }
+.input:focus { border-color: var(--cobalt); box-shadow: 0 0 0 3px rgb(47 75 216 / .14); }
+.field-label { display: block; margin-bottom: .3rem; font-size: .82rem; font-weight: 600; color: var(--ink-2); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border: 1px solid transparent; border-radius: var(--radius-sm); padding: .55rem .95rem; font-weight: 600; font-size: .92rem; line-height: 1.2; white-space: nowrap; transition: background-color .12s; }
+.btn:disabled { opacity: .55; }
+.btn-primary { background: var(--cobalt); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--cobalt-deep); }
+.btn-soft { background: var(--cobalt-tint); color: var(--cobalt-deep); }
+.btn-soft:hover:not(:disabled) { background: #dde3fb; }
+.btn-ghost { background: transparent; color: var(--ink-2); border-color: var(--line-strong); }
+.btn-ghost:hover:not(:disabled) { background: #fff; }
+.btn-danger { background: #fdecef; color: #b4233a; }
+.icon-btn { display: inline-grid; place-items: center; width: 1.85rem; height: 1.85rem; border-radius: 6px; border: 0; background: transparent; color: var(--muted); }
+.icon-btn:hover { background: #eef1f4; color: var(--ink); }
+.icon-btn.danger:hover { background: #fdecef; color: #b4233a; }
+.eyebrow { font-size: .9rem; font-weight: 500; color: var(--muted); }
+.chip { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; padding: .15rem .55rem; font-size: .76rem; font-weight: 600; background: #eef1f4; color: var(--ink-2); }
+.dot { width: .55rem; height: .55rem; border-radius: 50%; flex-shrink: 0; }
+
+/* Stat: the big condensed numbers that give the app its scoreboard character */
+.stat-value { font-family: "Barlow Condensed", sans-serif; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 2.35rem; line-height: 1; letter-spacing: -.01em; }
+.stat-unit { font-family: Barlow, sans-serif; font-size: .9rem; font-weight: 500; color: var(--muted); margin-left: .3rem; letter-spacing: 0; }
+
+/* Week board shared by the diet and workout charts */
+.week-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; }
+.week-table { width: 100%; min-width: 980px; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+.week-table th, .week-table td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); vertical-align: top; }
+.week-table tr > *:last-child { border-right: 0; }
+.week-table tbody tr:last-child > * { border-bottom: 0; }
+.week-table thead th { padding: .7rem .75rem .6rem; text-align: left; font-weight: 600; background: #f7f9fb; }
+.week-table th.slot { width: 8.5rem; padding: .75rem; text-align: left; font-size: .88rem; font-weight: 600; color: var(--ink-2); background: #f7f9fb; text-transform: capitalize; }
+.week-table td { padding: .45rem; }
+.week-table .is-today { background: #f6f8fe; }
+.week-table thead th.is-today { background: var(--cobalt-tint); box-shadow: inset 0 3px 0 var(--cobalt); }
+.week-table tfoot td, .week-table tfoot th { border-top: 1px solid var(--line-strong); border-bottom: 0; background: #f7f9fb; padding: .6rem .75rem; }
+.plan-item { position: relative; border-radius: var(--radius-sm); padding: .4rem .5rem; background: #f3f5f8; margin-bottom: .35rem; }
+.is-today .plan-item { background: #fff; border: 1px solid #dde3fb; }
+.plan-item .item-actions { position: absolute; top: .2rem; right: .2rem; display: flex; opacity: 0; transition: opacity .1s; background: #fff; border-radius: 6px; box-shadow: 0 2px 8px rgb(24 33 46 / .14); }
+.plan-item:hover .item-actions, .plan-item:focus-within .item-actions { opacity: 1; }
+/* Touch screens have no hover: keep the actions visible, in flow under the item. */
+@media (hover: none) { .plan-item .item-actions { position: static; opacity: 1; justify-content: flex-end; margin-top: .25rem; background: transparent; box-shadow: none; } }
+.add-cell { display: flex; align-items: center; justify-content: center; gap: .3rem; width: 100%; padding: .35rem; border: 1px dashed var(--line-strong); border-radius: var(--radius-sm); background: transparent; color: var(--muted); font-size: .8rem; font-weight: 600; }
+.add-cell:hover { border-color: var(--cobalt); color: var(--cobalt); background: #fff; }
+.day-col { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; }
+.day-col.is-today { border-color: var(--cobalt); box-shadow: inset 0 3px 0 var(--cobalt); }
+.day-strip { display: flex; gap: .35rem; overflow-x: auto; padding-bottom: .2rem; }
+
+/* Modal */
+.modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 1rem; background: rgb(24 33 46 / .45); animation: fade .12s ease-out; }
+.modal { width: 100%; max-width: 32rem; max-height: calc(100vh - 2rem); overflow-y: auto; border-radius: var(--radius-lg); background: #fff; box-shadow: 0 24px 60px rgb(24 33 46 / .3); animation: rise .16s ease-out; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .modal, .modal-backdrop { animation: none; } }
+
+.mobile-tabs, .mobile-menu { display: none; }
+@media (max-width: 880px) {
+  .app-grid { grid-template-columns: 1fr; } .sidebar { display: none; }
+  .topbar { padding: .7rem 1rem; } .content { padding: 1.1rem 1rem 6.5rem; }
+  .mobile-menu { display: block; position: relative; }
+  .mobile-menu summary { list-style: none; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: .4rem .7rem; color: var(--ink); font-size: .88rem; font-weight: 600; cursor: pointer; background: #fff; }
+  .mobile-menu summary::-webkit-details-marker { display: none; }
+  .mobile-menu nav { position: absolute; right: 0; top: 2.6rem; z-index: 20; width: 13rem; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; box-shadow: 0 15px 30px rgb(24 33 46 / .16); }
+  .mobile-menu nav a { display: flex; align-items: center; gap: .6rem; padding: .7rem .85rem; color: var(--ink-2); text-decoration: none; font-size: .92rem; }
+  .mobile-menu nav a:hover { background: var(--chalk); }
+  .mobile-tabs { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; z-index: 30; left: 0; right: 0; bottom: 0; padding: .45rem .2rem calc(.45rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: rgba(255,255,255,.97); backdrop-filter: blur(12px); }
+  .mobile-tabs a { display: grid; place-items: center; gap: .15rem; min-width: 0; color: var(--muted); text-decoration: none; font-size: .68rem; font-weight: 600; }
+  .mobile-tabs a.active { color: var(--cobalt); }
+  .mobile-tabs a span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stat-value { font-size: 1.65rem; }
+  .stat-unit { font-size: .78rem; margin-left: .2rem; }
+}
