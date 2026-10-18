@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,18 +8,35 @@ from .core.config import get_settings
 from .database import Base, engine
 from . import models  # noqa: F401 - registers SQLAlchemy mappings
 
+settings = get_settings()
+log = logging.getLogger("fittrack")
+
+
+def ensure_schema() -> None:
+    """Create any missing tables (never alters or drops existing ones).
+
+    Runs at import time so it also works on serverless platforms such as Vercel,
+    which may not deliver ASGI lifespan events, and again on lifespan startup.
+    Disable with FITTRACK_AUTO_CREATE_TABLES=false once the schema exists.
+    """
+    if not settings.auto_create_tables:
+        return
+    try:
+        Base.metadata.create_all(bind=engine, checkfirst=True)
+    except Exception:  # e.g. two cold starts racing on DDL; the other one wins
+        log.exception("Schema check failed; continuing because tables may already exist")
+
+
+ensure_schema()
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # Local development stays frictionless. Deployments run the versioned Alembic
-    # migration before the API starts, so multiple workers never race on DDL.
-    if settings.environment == "development":
-        Base.metadata.create_all(bind=engine)
+    ensure_schema()
     yield
 
 
-settings = get_settings()
-app = FastAPI(title="FitTrack API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="FitTrack API", version="0.2.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.origins,
@@ -34,6 +52,11 @@ async def http_error_handler(_: Request, exc: HTTPException):
 
 
 app.include_router(v1_router, prefix="/api/v1")
+
+
+@app.get("/")
+def root():
+    return {"service": "FitTrack API", "docs": "/docs", "health": "/health"}
 
 
 @app.get("/health")

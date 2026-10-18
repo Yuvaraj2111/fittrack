@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { format } from "date-fns";
 import { api } from "@/lib/api";
+import { Logo } from "@/components/logo";
 
 type NavItem = readonly [label: string, href: string, icon: typeof Activity];
 const groups: { label: string; items: NavItem[] }[] = [
@@ -30,7 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const initial = currentUser.name.trim().charAt(0).toUpperCase() || "F";
   return <><div className="app-grid">
     <aside className="sidebar" aria-label="Main navigation">
-      <Link href="/dashboard" className="brand"><span className="brand-mark">F</span>FitTrack</Link>
+      <Link href="/dashboard" className="brand"><Logo tone="dark"/></Link>
       <nav>{groups.map((group) => <div className="nav-group" key={group.label}>
         <p className="nav-group-label">{group.label}</p>
         <div className="space-y-0.5">{group.items.map(([label, href, Icon]) => <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined} className={`nav-link ${pathname === href ? "active" : ""}`}><Icon size={17}/>{label}</Link>)}</div>
@@ -39,7 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </aside>
     <div className="main">
       <header className="topbar">
-        <div className="min-w-0"><p className="truncate text-sm text-slate-500">{format(new Date(), "EEEE, d MMMM")}</p></div>
+        <div className="min-w-0"><Link href="/dashboard" className="topbar-logo"><Logo tone="light" size="sm"/></Link><p className="topbar-date truncate text-sm text-slate-500">{format(new Date(), "EEEE, d MMMM")}</p></div>
         <div className="flex items-center gap-2">
           <details className="mobile-menu"><summary>More</summary><nav>{all.filter(([, href]) => !mobileTabs.includes(href)).map(([label, href, Icon]) => <Link key={href} href={href}><Icon size={16}/>{label}</Link>)}<button onClick={signOut} className="flex w-full items-center gap-2.5 border-t border-slate-100 px-[.85rem] py-[.7rem] text-left text-[.92rem] text-slate-600"><LogOut size={16}/>Sign out</button></nav></details>
           <Link href="/settings" className="avatar" title={`${currentUser.name} — account settings`} aria-label="Account settings">{initial}</Link>

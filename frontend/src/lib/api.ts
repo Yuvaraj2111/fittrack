@@ -1,4 +1,11 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+// Defaults to the same-origin proxy defined in next.config.ts. Set NEXT_PUBLIC_API_URL only
+// to call an API on another origin directly (then configure CORS and cookies on the API).
+const configured = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+// A localhost API is only reachable from your own machine, so on a live site fall back to the proxy.
+const API_URL =
+  typeof window !== "undefined" && configured.includes("localhost") && window.location.hostname !== "localhost"
+    ? "/api/v1"
+    : configured;
 
 export class ApiError extends Error { constructor(message: string, public status: number) { super(message); } }
 
