@@ -1,4 +1,4 @@
-# FitTrack
+# FitTrack by uv
 
 FitTrack is a privacy-conscious personal fitness and health tracker. This repository currently delivers a tested, full-stack foundation and the first working vertical slices: owner setup, authenticated dashboard, food diary with Open Food Facts lookup, hydration, manual steps, weight history, workout session lifecycle with server-calculated duration, weekly diet and workout charts, supplements, medication records, goals, scheduled reminders, profile targets, and basic trends.
 
