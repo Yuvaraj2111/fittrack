@@ -4,8 +4,13 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker, Session
 from .core.config import get_settings
 
 settings = get_settings()
-connect_args = {"check_same_thread": False} if settings.sqlalchemy_database_url.startswith("sqlite") else {}
-engine = create_engine(settings.sqlalchemy_database_url, connect_args=connect_args, future=True, pool_pre_ping=True)
+_url = settings.sqlalchemy_database_url
+if _url.startswith("sqlite"):
+    engine = create_engine(_url, connect_args={"check_same_thread": False}, future=True, pool_pre_ping=True)
+else:
+    # Serverless-friendly: a small pool per function instance, recycled before
+    # idle connections are dropped by the database's pooler.
+    engine = create_engine(_url, future=True, pool_pre_ping=True, pool_size=2, max_overflow=3, pool_recycle=300)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, expire_on_commit=False)
 
 

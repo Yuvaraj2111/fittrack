@@ -48,7 +48,7 @@ Backend (PowerShell):
 cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -77,58 +77,9 @@ cd ..\frontend
 npm.cmd run build
 ```
 
-## Deploy with Vercel + PostgreSQL
+## Deploy
 
-FitTrack has two deployable services. Deploy the **Next.js frontend** to Vercel and the **FastAPI backend** to a persistent container/service that supports Docker. Do not deploy the current SQLite backend as a Vercel Function: its local filesystem is not a durable database, and a serverless instance is not a reliable home for the reminder scheduler.
-
-### 1. Provision production infrastructure
-
-1. Create a managed PostgreSQL database. Neon is available through Vercel's Marketplace, but any PostgreSQL provider works.
-2. Deploy the `backend/` directory to a Docker-capable host. Its existing `backend/Dockerfile` is the build definition; expose port `8000` and set its health check to `/health`.
-3. Prefer custom sibling subdomains, such as `app.example.com` (Vercel) and `api.example.com` (backend). They allow the secure cookie session to remain same-site. If you use unrelated default provider domains, browser privacy settings can block cookie authentication.
-
-### 2. Configure backend production variables
-
-Set these on the backend host—never commit them:
-
-```text
-FITTRACK_DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
-FITTRACK_SECRET_KEY=<a-random-32-byte-or-longer-secret>
-FITTRACK_CORS_ORIGINS=https://app.example.com
-FITTRACK_ENVIRONMENT=production
-FITTRACK_COOKIE_SECURE=true
-FITTRACK_COOKIE_DOMAIN=.example.com
-FITTRACK_COOKIE_SAMESITE=lax
-```
-
-`postgresql://` URLs are automatically configured to use the included psycopg 3 driver. Before exposing the API, run the initial Alembic migration once from the backend deployment environment:
-
-```text
-alembic upgrade head
-```
-
-The API only uses `create_all` for local development; production relies on the versioned migration so multiple workers do not race on schema changes.
-
-### 3. Deploy the frontend on Vercel
-
-1. In Vercel, choose **Add New → Project** and import the GitHub repository.
-2. Set **Root Directory** to `frontend` so Vercel detects Next.js.
-3. Add this **Production** environment variable:
-
-   ```text
-   NEXT_PUBLIC_API_URL=https://api.example.com/api/v1
-   ```
-
-4. Deploy. Every GitHub push then creates a deployment; verify login, a food lookup, and a saved entry against the production API. Add a Preview API URL only after its exact preview origin is allowed in `FITTRACK_CORS_ORIGINS` on a non-production backend.
-
-`NEXT_PUBLIC_API_URL` is intentionally public because it is the browser-facing API address. Do not put database URLs, the JWT secret, or USDA keys in Vercel frontend variables—`NEXT_PUBLIC_*` values are included in the client bundle.
-
-### Before going live
-
-- Use a long randomly generated `FITTRACK_SECRET_KEY` and back up PostgreSQL.
-- Configure both the app and API custom domains before enabling secure cookies.
-- Run the backend migration job only once per release, not in every API worker.
-- Keep the reminder worker to one dedicated backend process until distributed job locking is implemented.
+Step-by-step Vercel + Neon Postgres instructions are in **[DEPLOY.md](DEPLOY.md)**: two Vercel projects (`backend`, `frontend`) from one repository, with the website proxying `/api/v1` to the API so the login cookie stays same-origin.
 
 ## Privacy and safety notes
 

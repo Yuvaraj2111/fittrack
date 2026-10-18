@@ -24,8 +24,8 @@ button:disabled { cursor: not-allowed; }
 /* Shell */
 .app-grid { display: grid; grid-template-columns: 15.5rem 1fr; min-height: 100vh; }
 .sidebar { background: var(--ink); color: #dfe5ee; padding: 1.4rem .9rem 1rem; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; overflow-y: auto; }
-.brand { display: flex; align-items: center; gap: .6rem; padding: 0 .55rem; margin-bottom: 1.6rem; color: #fff; text-decoration: none; font-family: "Barlow Condensed", sans-serif; font-size: 1.55rem; font-weight: 700; letter-spacing: .01em; }
-.brand-mark { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; background: var(--cobalt); font-size: 1.1rem; }
+.brand { display: flex; padding: 0 .55rem; margin-bottom: 1.6rem; text-decoration: none; }
+.topbar-logo { display: none; text-decoration: none; }
 .nav-group + .nav-group { margin-top: 1.1rem; }
 .nav-group-label { padding: 0 .7rem .35rem; font-size: .78rem; color: #8592a5; }
 .nav-link { position: relative; display: flex; align-items: center; gap: .7rem; border-radius: var(--radius-sm); color: #b9c3d1; padding: .5rem .7rem; font-size: .93rem; font-weight: 500; text-decoration: none; background: none; border: 0; text-align: left; }
@@ -98,7 +98,8 @@ button:disabled { cursor: not-allowed; }
 .mobile-tabs, .mobile-menu { display: none; }
 @media (max-width: 880px) {
   .app-grid { grid-template-columns: 1fr; } .sidebar { display: none; }
-  .topbar { padding: .7rem 1rem; } .content { padding: 1.1rem 1rem 6.5rem; }
+  .topbar { padding: .7rem 1rem; }
+  .topbar-logo { display: inline-flex; } .topbar-date { display: none; } .content { padding: 1.1rem 1rem 6.5rem; }
   .mobile-menu { display: block; position: relative; }
   .mobile-menu summary { list-style: none; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: .4rem .7rem; color: var(--ink); font-size: .88rem; font-weight: 600; cursor: pointer; background: #fff; }
   .mobile-menu summary::-webkit-details-marker { display: none; }
