@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # Create missing tables when the API starts. Safe to leave on (it only creates
     # tables that don't exist); turn off once the schema is in place to speed cold starts.
     auto_create_tables: bool = True
+    # AI diet planner. Without a key the built-in regional planner is used instead.
+    anthropic_api_key: str | None = Field(default=None, validation_alias=AliasChoices("FITTRACK_ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY"))
+    ai_model: str = "claude-haiku-5-5"
 
     @model_validator(mode="after")
     def _production_guards(self) -> "Settings":

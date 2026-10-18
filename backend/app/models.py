@@ -213,7 +213,32 @@ class DietChartItem(Base):
     fat_g: Mapped[Decimal] = mapped_column(Numeric(8, 2), default=0)
     position: Mapped[int] = mapped_column(Integer, default=0)
     chart: Mapped[DietChart] = relationship(back_populates="items")
+    alternatives: Mapped[list["DietItemAlternative"]] = relationship(back_populates="item", cascade="all, delete-orphan", order_by="DietItemAlternative.id", lazy="selectin")
     __table_args__ = (Index("ix_diet_item_chart_day", "chart_id", "day"),)
+
+
+class DietItemAlternative(Base):
+    """A suggested swap for a planned meal (same slot, similar calories).
+    Kept in its own table so existing databases gain it without a column migration."""
+    __tablename__ = "diet_item_alternatives"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    item_id: Mapped[int] = mapped_column(ForeignKey("diet_chart_items.id", ondelete="CASCADE"), index=True)
+    food_name: Mapped[str] = mapped_column(String(180))
+    portion: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    calories: Mapped[Decimal] = mapped_column(Numeric(9, 2), default=0)
+    protein_g: Mapped[Decimal] = mapped_column(Numeric(8, 2), default=0)
+    carbs_g: Mapped[Decimal] = mapped_column(Numeric(8, 2), default=0)
+    fat_g: Mapped[Decimal] = mapped_column(Numeric(8, 2), default=0)
+    item: Mapped[DietChartItem] = relationship(back_populates="alternatives")
+
+
+class DietIntake(Base):
+    """The latest answers to the diet planner questions, so the form can be prefilled."""
+    __tablename__ = "diet_intakes"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 
 
 class WorkoutChart(Base, OwnedTimestamped):
@@ -242,7 +267,32 @@ class WorkoutChartItem(Base):
     notes: Mapped[Optional[str]] = mapped_column(String(240), nullable=True)
     position: Mapped[int] = mapped_column(Integer, default=0)
     chart: Mapped[WorkoutChart] = relationship(back_populates="items")
+    alternatives: Mapped[list["WorkoutItemAlternative"]] = relationship(back_populates="item", cascade="all, delete-orphan", order_by="WorkoutItemAlternative.id", lazy="selectin")
     __table_args__ = (Index("ix_workout_item_chart_day", "chart_id", "day"),)
+
+
+class WorkoutItemAlternative(Base):
+    """A suggested swap for a planned exercise (same movement pattern)."""
+    __tablename__ = "workout_item_alternatives"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    item_id: Mapped[int] = mapped_column(ForeignKey("workout_chart_items.id", ondelete="CASCADE"), index=True)
+    exercise: Mapped[str] = mapped_column(String(160))
+    muscle_group: Mapped[str] = mapped_column(String(40), default="full body")
+    sets: Mapped[int] = mapped_column(Integer, default=0)
+    reps: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    duration_minutes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    rest_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(String(240), nullable=True)
+    item: Mapped[WorkoutChartItem] = relationship(back_populates="alternatives")
+
+
+class WorkoutIntake(Base):
+    """The latest answers to the workout planner questions, so the form can be prefilled."""
+    __tablename__ = "workout_intakes"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 
 
 # Additional normalized entities are deliberately retained as named models in the roadmap

@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Link href="/dashboard" className="brand"><Logo tone="dark"/></Link>
       <nav>{groups.map((group) => <div className="nav-group" key={group.label}>
         <p className="nav-group-label">{group.label}</p>
-        <div className="space-y-0.5">{group.items.map(([label, href, Icon]) => <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined} className={`nav-link ${pathname === href ? "active" : ""}`}><Icon size={17}/>{label}</Link>)}</div>
+        <div className="space-y-0.5">{group.items.map(([label, href, Icon]) => <Link key={href} href={href} aria-current={pathname === href || pathname.startsWith(href + "/") ? "page" : undefined} className={`nav-link ${pathname === href || pathname.startsWith(href + "/") ? "active" : ""}`}><Icon size={17}/>{label}</Link>)}</div>
       </div>)}</nav>
       <div className="sidebar-foot"><p className="truncate px-3 text-xs text-[#8592a5]">{currentUser.email}</p><button className="nav-link mt-1 w-full" onClick={signOut}><LogOut size={17}/>Sign out</button></div>
     </aside>

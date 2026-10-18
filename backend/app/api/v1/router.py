@@ -9,14 +9,17 @@ from ...core.config import get_settings
 from ...core.security import create_access_token, hash_password, verify_password
 from ...database import get_db
 from ...deps import CurrentUser, DbSession, MutationUser
-from ...models import DietChart, DietChartItem, WorkoutChart, WorkoutChartItem, Food, FoodLog, HydrationLog, Medication, Reminder, StepLog, Supplement, User, UserGoal, UserProfile, WeightLog, WorkoutSession
+from ...models import DietChart, DietChartItem, DietIntake, DietItemAlternative, WorkoutIntake, WorkoutItemAlternative, WorkoutChart, WorkoutChartItem, Food, FoodLog, HydrationLog, Medication, Reminder, StepLog, Supplement, User, UserGoal, UserProfile, WeightLog, WorkoutSession
 from ...schemas import (ExternalFoodOut, FoodIn, FoodLogIn, FoodLogOut, FoodOut, GoalIn, GoalOut, HydrationIn,
     HydrationOut, LoginIn, MedicationIn, MedicationOut, ProfileIn, ProfileOut, RegisterIn,
     ReminderIn, ReminderOut, StepIn, StepOut, SupplementIn, SupplementOut, UserOut,
     WeightIn, WeightOut, WorkoutFinishIn, WorkoutIn, WorkoutOut,
     DietChartIn, DietChartItemIn, DietChartItemOut, DietChartOut,
+    DietChartFullIn, DietDayIn, DietIntakeIn, DietPlanOut, DietTargetsOut, SwapIn,
+    WorkoutChartFullIn, WorkoutDayIn, WorkoutIntakeIn, WorkoutPlanOut,
     WorkoutChartIn, WorkoutChartItemIn, WorkoutChartItemOut, WorkoutChartOut)
 from ...services.open_food_facts import food_by_barcode, search_foods
+from ...services import diet_planner, workout_planner
 
 router = APIRouter()
 
@@ -420,3 +423,142 @@ def update_workout_item(item_id: int, payload: WorkoutChartItemIn, db: DbSession
 @router.delete("/workout-chart-items/{item_id}", status_code=204)
 def delete_workout_item(item_id: int, db: DbSession, user: MutationUser):
     db.delete(_owned_item(db, WorkoutChartItem, WorkoutChart, user.id, item_id)); db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Diet planner: questions -> targets -> AI (or built-in) weekly plan -> saved chart.
+# Generation never writes a chart; the person reviews and edits the draft first.
+# ---------------------------------------------------------------------------
+
+@router.get("/diet-planner/intake")
+def get_diet_intake(user: CurrentUser, db: DbSession):
+    saved = db.scalar(select(DietIntake).where(DietIntake.user_id == user.id))
+    latest_weight = db.scalar(select(WeightLog.weight_kg).where(WeightLog.user_id == user.id).order_by(WeightLog.local_date.desc(), WeightLog.id.desc()).limit(1))
+    height = user.profile.height_cm if user.profile else None
+    return {"intake": saved.data if saved else None, "ai_enabled": diet_planner.ai_enabled(),
+            "known": {"weight_kg": float(latest_weight) if latest_weight is not None else None, "height_cm": float(height) if height is not None else None}}
+
+
+@router.post("/diet-planner/targets", response_model=DietTargetsOut)
+def diet_targets(payload: DietIntakeIn, _user: CurrentUser):
+    return diet_planner.targets(payload)
+
+
+@router.post("/diet-planner/generate", response_model=DietPlanOut)
+async def generate_diet_plan(payload: DietIntakeIn, db: DbSession, user: MutationUser):
+    saved = db.scalar(select(DietIntake).where(DietIntake.user_id == user.id))
+    if saved:
+        saved.data = payload.model_dump()
+    else:
+        db.add(DietIntake(user_id=user.id, data=payload.model_dump()))
+    if user.profile and not user.profile.height_cm:
+        user.profile.height_cm = Decimal(str(payload.height_cm))
+    db.commit()
+    return await diet_planner.plan_days(payload, diet_planner.DAYS)
+
+
+@router.post("/diet-planner/generate-day", response_model=DietPlanOut)
+async def regenerate_diet_day(payload: DietDayIn, _user: MutationUser):
+    return await diet_planner.plan_days(payload.intake, [payload.day])
+
+
+@router.post("/diet-charts/full", response_model=DietChartOut, status_code=201)
+def create_full_diet_chart(payload: DietChartFullIn, db: DbSession, user: MutationUser):
+    chart = DietChart(user_id=user.id, name=payload.name, target_calories=payload.target_calories, notes=payload.notes)
+    positions: dict[str, int] = {}
+    for planned in payload.items:
+        key = planned.day
+        positions[key] = positions.get(key, 0) + 1
+        data = planned.model_dump(exclude={"alternatives"})
+        item = DietChartItem(position=positions[key], **data)
+        item.alternatives = [DietItemAlternative(**alt.model_dump()) for alt in planned.alternatives]
+        chart.items.append(item)
+    has_active = db.scalar(select(func.count()).select_from(DietChart).where(DietChart.user_id == user.id, DietChart.is_active.is_(True)))
+    db.add(chart)
+    db.flush()
+    if payload.activate or not has_active:
+        _activate(db, DietChart, user.id, chart)
+    if payload.apply_goals and user.profile:
+        g = payload.apply_goals
+        user.profile.calorie_goal, user.profile.protein_goal_g = g.calories, g.protein_g
+        user.profile.carb_goal_g, user.profile.fat_goal_g, user.profile.fiber_goal_g = g.carbs_g, g.fat_g, g.fiber_g
+    db.commit(); db.refresh(chart); return chart
+
+
+@router.post("/diet-chart-items/{item_id}/swap", response_model=DietChartItemOut)
+def swap_diet_item(item_id: int, payload: SwapIn, db: DbSession, user: MutationUser):
+    item = _owned_item(db, DietChartItem, DietChart, user.id, item_id)
+    alt = next((a for a in item.alternatives if a.id == payload.alternative_id), None)
+    if not alt:
+        raise HTTPException(status_code=404, detail="Alternative not found")
+    fields = ("food_name", "portion", "calories", "protein_g", "carbs_g", "fat_g")
+    current = {f: getattr(item, f) for f in fields}
+    for f in fields:
+        setattr(item, f, getattr(alt, f))
+        setattr(alt, f, current[f])  # the old meal becomes an alternative, so the swap can be undone
+    db.commit(); db.refresh(item); return item
+
+
+# ---------------------------------------------------------------------------
+# Workout planner: questions -> split -> AI (or built-in) exercises -> saved chart.
+# ---------------------------------------------------------------------------
+
+@router.get("/workout-planner/intake")
+def get_workout_intake(user: CurrentUser, db: DbSession):
+    saved = db.scalar(select(WorkoutIntake).where(WorkoutIntake.user_id == user.id))
+    diet = db.scalar(select(DietIntake).where(DietIntake.user_id == user.id))
+    latest_weight = db.scalar(select(WeightLog.weight_kg).where(WeightLog.user_id == user.id).order_by(WeightLog.local_date.desc(), WeightLog.id.desc()).limit(1))
+    body = {k: v for k, v in (diet.data if diet else {}).items() if k in ("age", "sex", "height_cm", "weight_kg")}
+    if user.profile and user.profile.height_cm and "height_cm" not in body:
+        body["height_cm"] = float(user.profile.height_cm)
+    if latest_weight is not None:
+        body["weight_kg"] = float(latest_weight)
+    return {"intake": saved.data if saved else None, "ai_enabled": diet_planner.ai_enabled(), "known": body,
+            "focus_options": workout_planner.FOCUS_OPTIONS}
+
+
+@router.post("/workout-planner/generate", response_model=WorkoutPlanOut)
+async def generate_workout_plan(payload: WorkoutIntakeIn, db: DbSession, user: MutationUser):
+    saved = db.scalar(select(WorkoutIntake).where(WorkoutIntake.user_id == user.id))
+    if saved:
+        saved.data = payload.model_dump()
+    else:
+        db.add(WorkoutIntake(user_id=user.id, data=payload.model_dump()))
+    db.commit()
+    return await workout_planner.plan_week(payload)
+
+
+@router.post("/workout-planner/generate-day", response_model=WorkoutPlanOut)
+async def regenerate_workout_day(payload: WorkoutDayIn, _user: MutationUser):
+    return await workout_planner.plan_day(payload.intake, payload.day, payload.focus)
+
+
+@router.post("/workout-charts/full", response_model=WorkoutChartOut, status_code=201)
+def create_full_workout_chart(payload: WorkoutChartFullIn, db: DbSession, user: MutationUser):
+    chart = WorkoutChart(user_id=user.id, name=payload.name, notes=payload.notes, day_focus=payload.day_focus)
+    positions: dict[str, int] = {}
+    for planned in payload.items:
+        positions[planned.day] = positions.get(planned.day, 0) + 1
+        item = WorkoutChartItem(position=positions[planned.day], **planned.model_dump(exclude={"alternatives"}))
+        item.alternatives = [WorkoutItemAlternative(**alt.model_dump()) for alt in planned.alternatives]
+        chart.items.append(item)
+    has_active = db.scalar(select(func.count()).select_from(WorkoutChart).where(WorkoutChart.user_id == user.id, WorkoutChart.is_active.is_(True)))
+    db.add(chart)
+    db.flush()
+    if payload.activate or not has_active:
+        _activate(db, WorkoutChart, user.id, chart)
+    db.commit(); db.refresh(chart); return chart
+
+
+@router.post("/workout-chart-items/{item_id}/swap", response_model=WorkoutChartItemOut)
+def swap_workout_item(item_id: int, payload: SwapIn, db: DbSession, user: MutationUser):
+    item = _owned_item(db, WorkoutChartItem, WorkoutChart, user.id, item_id)
+    alt = next((a for a in item.alternatives if a.id == payload.alternative_id), None)
+    if not alt:
+        raise HTTPException(status_code=404, detail="Alternative not found")
+    fields = ("exercise", "muscle_group", "sets", "reps", "duration_minutes", "rest_seconds", "notes")
+    current = {f: getattr(item, f) for f in fields}
+    for f in fields:
+        setattr(item, f, getattr(alt, f))
+        setattr(alt, f, current[f])
+    db.commit(); db.refresh(item); return item

@@ -1,7 +1,8 @@
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
-import { Copy, Pencil, Play, Plus, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { Copy, Pencil, Play, Plus, Repeat, Sparkles, Trash2 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -28,6 +29,8 @@ function WorkoutChartContent() {
   const client = useQueryClient();
   const charts = useQuery({ queryKey: ["workout-charts"], queryFn: () => api<WorkoutChart[]>("/workout-charts") });
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [swapItem, setSwapItem] = useState<WorkoutItem | null>(null);
+  useEffect(() => { const id = Number(new URLSearchParams(window.location.search).get("chart")); if (id) setSelectedId(id); }, []);
   const [creating, setCreating] = useState(false); const [editingChart, setEditingChart] = useState(false);
   const [itemForm, setItemForm] = useState<ItemForm | null>(null); const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [focusDay, setFocusDay] = useState<Day | null>(null); const [focusText, setFocusText] = useState("");
@@ -53,6 +56,7 @@ function WorkoutChartContent() {
     },
     onSuccess: () => { toast.success(editingItemId ? "Exercise updated" : "Exercise added"); setItemForm(null); setEditingItemId(null); refresh(); }, onError,
   });
+  const swap = useMutation({ mutationFn: ({ itemId, altId }: { itemId: number; altId: number }) => api(`/workout-chart-items/${itemId}/swap`, { method: "POST", body: JSON.stringify({ alternative_id: altId }) }), onSuccess: () => { toast.success("Exercise swapped. The previous one is kept as an alternative."); setSwapItem(null); refresh(); }, onError });
   const removeItem = useMutation({ mutationFn: (id: number) => api<void>(`/workout-chart-items/${id}`, { method: "DELETE" }), onSuccess: () => { toast.success("Exercise removed"); refresh(); }, onError });
   const copyDay = useMutation({
     mutationFn: async () => {
@@ -88,7 +92,15 @@ function WorkoutChartContent() {
   if (charts.isLoading) return <main className="content"><div className="h-80 animate-pulse rounded-2xl bg-slate-200"/></main>;
   if (!chart) return <main className="content">
     <PageHeader title="Workout chart" description="Lay out your training split across the week: what you train each day, the exercises, sets, reps and load."/>
-    <section className="card max-w-lg p-6"><h2 className="font-display text-2xl font-bold">Create your first workout chart</h2><p className="mb-5 mt-1 text-sm text-slate-500">Name your split. You’ll set each day’s focus and exercises next.</p><ChartForm onSubmit={(v) => createChart.mutate({ ...v, day_focus: {} })} pending={createChart.isPending} submitLabel="Create workout chart"/></section>
+    <div className="grid max-w-5xl gap-5 lg:grid-cols-2">
+      <section className="card flex flex-col p-6" style={{ borderColor: "#bcc7f6" }}>
+        <span className="grid h-11 w-11 place-items-center rounded-xl bg-teal-600 text-white"><Sparkles size={21}/></span>
+        <h2 className="mt-4 font-display text-2xl font-bold">Plan it for me</h2>
+        <p className="mb-5 mt-1 text-sm text-slate-600">Tell me your goal, which days you can train, how long, what equipment you have and any injuries. You’ll get a weekly split with sets, reps and rest, two alternatives for every exercise, and you can edit everything before saving.</p>
+        <Link href="/workout-chart/plan" className="btn btn-primary mt-auto"><Sparkles size={16}/>Start the workout planner</Link>
+      </section>
+      <section className="card p-6"><h2 className="font-display text-2xl font-bold">Or start blank</h2><p className="mb-5 mt-1 text-sm text-slate-500">Name your split. You’ll set each day’s focus and exercises yourself.</p><ChartForm onSubmit={(v) => createChart.mutate({ ...v, day_focus: {} })} pending={createChart.isPending} submitLabel="Create blank chart"/></section>
+    </div>
   </main>;
 
   const todayItems = items.filter((i) => i.day === todayDay);
@@ -96,7 +108,8 @@ function WorkoutChartContent() {
     <PageHeader title="Workout chart" description="Your weekly training split. Select a day’s focus to rename it, and edit or remove any exercise from its card."
       action={<>
         {list.length > 1 && <select className="input w-auto min-w-[12rem]" value={chart.id} onChange={(e) => setSelectedId(Number(e.target.value))} aria-label="Choose a workout chart">{list.map((c) => <option key={c.id} value={c.id}>{c.name}{c.is_active ? " (following)" : ""}</option>)}</select>}
-        <button className="btn btn-primary" onClick={() => setCreating(true)}><Plus size={16}/>New chart</button>
+        <button className="btn btn-ghost" onClick={() => setCreating(true)}><Plus size={16}/>Blank chart</button>
+        <Link href="/workout-chart/plan" className="btn btn-primary"><Sparkles size={16}/>Plan with AI</Link>
       </>}/>
 
     <section className="card mb-5 grid grid-cols-3 gap-x-4 gap-y-5 p-5 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-6">
@@ -123,6 +136,7 @@ function WorkoutChartContent() {
             <p className="flex items-center gap-1.5 text-[.86rem] font-semibold leading-snug"><span className="dot" style={{ background: MUSCLE_COLOR[i.muscle_group] ?? "#8fa3b8" }} title={i.muscle_group}/>{i.exercise}</p>
             <p className="num pl-[1.05rem] text-[.82rem] text-slate-600">{prescription(i) || i.muscle_group}</p>
             {i.notes && <p className="pl-[1.05rem] text-xs text-slate-500">{i.notes}</p>}
+            {!!i.alternatives?.length && <button className="ml-[1.05rem] mt-1 inline-flex items-center gap-1 text-[.72rem] font-semibold text-teal-700 hover:underline" onClick={() => setSwapItem(i)}><Repeat size={11}/>{i.alternatives.length} swap{i.alternatives.length > 1 ? "s" : ""}</button>}
             <div className="item-actions"><button className="icon-btn" aria-label={`Edit ${i.exercise}`} onClick={() => openEdit(i)}><Pencil size={13}/></button><button className="icon-btn danger" aria-label={`Remove ${i.exercise}`} onClick={() => removeItem.mutate(i.id)}><Trash2 size={13}/></button></div>
           </div>)}
           <button className="add-cell" onClick={() => openAdd(day)}><Plus size={13}/>Add exercise</button>
@@ -150,6 +164,15 @@ function WorkoutChartContent() {
       </div>
     </section>
 
+    <Modal open={!!swapItem} title="Swap this exercise" onClose={() => setSwapItem(null)}>
+      {swapItem && <div className="grid gap-2">
+        <p className="text-sm text-slate-500">Now: <b className="text-ink">{swapItem.exercise}</b>{prescription(swapItem) ? ` · ${prescription(swapItem)}` : ""}</p>
+        {swapItem.alternatives?.map((alt) => <button key={alt.id} disabled={swap.isPending} onClick={() => swap.mutate({ itemId: swapItem.id, altId: alt.id })} className="card flex items-center justify-between gap-3 p-3 text-left hover:border-teal-500">
+          <span className="min-w-0"><span className="flex items-center gap-1.5 font-semibold"><span className="dot" style={{ background: MUSCLE_COLOR[alt.muscle_group] ?? "#8fa3b8" }}/>{alt.exercise}</span>{alt.notes && <span className="block text-xs text-slate-500">{alt.notes}</span>}</span>
+          <span className="num shrink-0 text-sm font-semibold">{prescription(alt)}</span>
+        </button>)}
+      </div>}
+    </Modal>
     <Modal open={creating} title="New workout chart" onClose={() => setCreating(false)}><ChartForm onSubmit={(v) => createChart.mutate({ ...v, day_focus: {} })} pending={createChart.isPending} submitLabel="Create workout chart"/></Modal>
     <Modal open={editingChart} title="Edit workout chart" onClose={() => setEditingChart(false)}>
       <ChartForm initial={chart} onSubmit={(v) => updateChart.mutate({ ...v, day_focus: chart.day_focus })} pending={updateChart.isPending} submitLabel="Save changes"/>

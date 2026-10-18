@@ -218,10 +218,24 @@ class DietChartItemIn(BaseModel):
     fat_g: Decimal = Field(default=0, ge=0, le=1000)
 
 
+class DietAlternativeIn(BaseModel):
+    food_name: str = Field(min_length=1, max_length=180)
+    portion: Optional[str] = Field(default=None, max_length=80)
+    calories: Decimal = Field(default=0, ge=0, le=10000)
+    protein_g: Decimal = Field(default=0, ge=0, le=1000)
+    carbs_g: Decimal = Field(default=0, ge=0, le=1000)
+    fat_g: Decimal = Field(default=0, ge=0, le=1000)
+
+
+class DietAlternativeOut(DietAlternativeIn, ORMModel):
+    id: int
+
+
 class DietChartItemOut(DietChartItemIn, ORMModel):
     id: int
     chart_id: int
     position: int
+    alternatives: list[DietAlternativeOut] = []
 
 
 class DietChartOut(DietChartIn, ORMModel):
@@ -249,10 +263,25 @@ class WorkoutChartItemIn(BaseModel):
     notes: Optional[str] = Field(default=None, max_length=240)
 
 
+class WorkoutAlternativeIn(BaseModel):
+    exercise: str = Field(min_length=1, max_length=160)
+    muscle_group: str = Field(default="full body", max_length=40)
+    sets: int = Field(default=0, ge=0, le=50)
+    reps: Optional[str] = Field(default=None, max_length=20)
+    duration_minutes: Optional[int] = Field(default=None, ge=0, le=600)
+    rest_seconds: Optional[int] = Field(default=None, ge=0, le=1800)
+    notes: Optional[str] = Field(default=None, max_length=240)
+
+
+class WorkoutAlternativeOut(WorkoutAlternativeIn, ORMModel):
+    id: int
+
+
 class WorkoutChartItemOut(WorkoutChartItemIn, ORMModel):
     id: int
     chart_id: int
     position: int
+    alternatives: list[WorkoutAlternativeOut] = []
 
 
 class WorkoutChartOut(WorkoutChartIn, ORMModel):
@@ -260,3 +289,119 @@ class WorkoutChartOut(WorkoutChartIn, ORMModel):
     is_active: bool
     created_at: datetime
     items: list[WorkoutChartItemOut] = []
+
+
+# ---------------------------------------------------------------- diet planner
+class DietIntakeIn(BaseModel):
+    age: int = Field(ge=13, le=100)
+    sex: Literal["male", "female", "other"]
+    height_cm: float = Field(ge=100, le=250)
+    weight_kg: float = Field(ge=25, le=300)
+    daily_activity: Literal["desk", "on_feet", "physical"] = "desk"
+    workout_days: int = Field(default=3, ge=0, le=7)
+    workout_types: list[str] = Field(default_factory=list, max_length=12)
+    workout_time: Literal["morning", "afternoon", "evening", "varies"] = "varies"
+    workout_notes: Optional[str] = Field(default=None, max_length=1000)
+    goal: Literal["lose", "maintain", "gain"] = "maintain"
+    pace: Literal["gentle", "steady"] = "gentle"
+    diet_type: Literal["vegan", "veg", "egg", "nonveg"] = "veg"
+    region: str = Field(default="south", max_length=40)
+    meals_per_day: Literal[3, 4, 5] = 5
+    usual_foods: Optional[str] = Field(default=None, max_length=1500)
+    likes: Optional[str] = Field(default=None, max_length=500)
+    avoid: Optional[str] = Field(default=None, max_length=500)
+    notes: Optional[str] = Field(default=None, max_length=500)
+
+
+class DietTargetsOut(BaseModel):
+    bmi: float
+    bmi_band: str
+    bmr: int
+    tdee: int
+    calories: int
+    protein_g: int
+    carbs_g: int
+    fat_g: int
+    fiber_g: int
+    slots: dict[str, int]
+    notes: list[str] = []
+
+
+class PlannedItem(DietAlternativeIn):
+    day: Weekday
+    meal_slot: MealSlot
+    alternatives: list[DietAlternativeIn] = Field(default_factory=list, max_length=4)
+
+
+class DietPlanOut(BaseModel):
+    source: Literal["ai", "builtin", "mixed"]
+    targets: DietTargetsOut
+    items: list[PlannedItem]
+    warnings: list[str] = []
+
+
+class DietDayIn(BaseModel):
+    intake: DietIntakeIn
+    day: Weekday
+
+
+class DietChartFullIn(DietChartIn):
+    items: list[PlannedItem] = Field(default_factory=list, max_length=300)
+    activate: bool = True
+    apply_goals: Optional[DietTargetsOut] = None
+
+
+class SwapIn(BaseModel):
+    alternative_id: int
+
+
+# ------------------------------------------------------------- workout planner
+class WorkoutIntakeIn(BaseModel):
+    age: int = Field(ge=13, le=100)
+    sex: Literal["male", "female", "other"]
+    height_cm: float = Field(ge=100, le=250)
+    weight_kg: float = Field(ge=25, le=300)
+    experience: Literal["beginner", "intermediate", "advanced"] = "beginner"
+    goal: Literal["fat_loss", "muscle", "strength", "fitness", "endurance", "sport"] = "fitness"
+    sport: Optional[str] = Field(default=None, max_length=60)
+    days: list[Weekday] = Field(default_factory=lambda: ["mon", "wed", "fri"], min_length=1, max_length=7)
+    minutes: Literal[30, 45, 60, 75, 90] = 45
+    equipment: Literal["gym", "dumbbells", "bodyweight"] = "gym"
+    extras: list[Literal["bands", "pullup_bar", "bench", "cardio_machine"]] = Field(default_factory=list)
+    split: Literal["auto", "full_body", "upper_lower", "ppl", "body_part"] = "auto"
+    cardio_likes: list[str] = Field(default_factory=list, max_length=10)
+    injuries: list[Literal["knee", "lower_back", "shoulder", "wrist", "neck", "ankle"]] = Field(default_factory=list)
+    health_notes: Optional[str] = Field(default=None, max_length=500)
+    notes: Optional[str] = Field(default=None, max_length=500)
+
+
+class PlannedExercise(WorkoutAlternativeIn):
+    day: Weekday
+    alternatives: list[WorkoutAlternativeIn] = Field(default_factory=list, max_length=4)
+
+
+class WorkoutSummaryOut(BaseModel):
+    split: str
+    training_days: int
+    minutes_per_week: int
+    sets_per_week: int
+    notes: list[str] = []
+
+
+class WorkoutPlanOut(BaseModel):
+    source: Literal["ai", "builtin", "mixed"]
+    summary: WorkoutSummaryOut
+    day_focus: dict[Weekday, str]
+    items: list[PlannedExercise]
+    warnings: list[str] = []
+
+
+class WorkoutDayIn(BaseModel):
+    intake: WorkoutIntakeIn
+    day: Weekday
+    focus: str = Field(min_length=1, max_length=60)
+
+
+class WorkoutChartFullIn(WorkoutChartIn):
+    items: list[PlannedExercise] = Field(default_factory=list, max_length=300)
+    activate: bool = True

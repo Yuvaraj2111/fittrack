@@ -1,7 +1,8 @@
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Copy, Pencil, Plus, Trash2, Utensils } from "lucide-react";
+import Link from "next/link";
+import { Check, Copy, Pencil, Plus, Repeat, Sparkles, Trash2, Utensils } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -34,6 +35,8 @@ function DietChartContent() {
   const client = useQueryClient();
   const charts = useQuery({ queryKey: ["diet-charts"], queryFn: () => api<DietChart[]>("/diet-charts") });
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [swapItem, setSwapItem] = useState<DietItem | null>(null);
+  useEffect(() => { const id = Number(new URLSearchParams(window.location.search).get("chart")); if (id) setSelectedId(id); }, []);
   const [creating, setCreating] = useState(false); const [editingChart, setEditingChart] = useState(false);
   const [itemForm, setItemForm] = useState<ItemForm | null>(null); const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [copyFrom, setCopyFrom] = useState<Day | null>(null); const [copyTo, setCopyTo] = useState<Day[]>([]);
@@ -59,6 +62,7 @@ function DietChartContent() {
     },
     onSuccess: () => { toast.success(editingItemId ? "Meal updated" : "Meal added to chart"); setItemForm(null); setEditingItemId(null); refresh(); }, onError,
   });
+  const swap = useMutation({ mutationFn: ({ itemId, altId }: { itemId: number; altId: number }) => api(`/diet-chart-items/${itemId}/swap`, { method: "POST", body: JSON.stringify({ alternative_id: altId }) }), onSuccess: () => { toast.success("Meal swapped. The previous one is kept as an alternative."); setSwapItem(null); refresh(); }, onError });
   const removeItem = useMutation({ mutationFn: (id: number) => api<void>(`/diet-chart-items/${id}`, { method: "DELETE" }), onSuccess: () => { toast.success("Meal removed"); refresh(); }, onError });
   const copyDay = useMutation({
     mutationFn: async () => {
@@ -86,6 +90,7 @@ function DietChartContent() {
   const ItemCard = ({ item, day }: { item: DietItem; day: Day }) => <div className="plan-item">
     <p className="text-[.86rem] font-semibold leading-snug text-ink">{item.food_name}</p>
     <p className="text-xs text-slate-500">{item.portion ? `${item.portion} · ` : ""}<span className="num font-semibold text-slate-700">{fmt(n(item.calories))}</span> kcal</p>
+    {!!item.alternatives?.length && <button className="mt-1 inline-flex items-center gap-1 text-[.72rem] font-semibold text-teal-700 hover:underline" onClick={() => setSwapItem(item)}><Repeat size={11}/>{item.alternatives.length} swap{item.alternatives.length > 1 ? "s" : ""}</button>}
     <div className="item-actions">
       {day === todayDay && <button className="icon-btn" title="Log to today’s diary" aria-label={`Log ${item.food_name} to today’s diary`} onClick={() => logToDiary.mutate(item)}><Check size={14}/></button>}
       <button className="icon-btn" title="Edit" aria-label={`Edit ${item.food_name}`} onClick={() => openEdit(item)}><Pencil size={13}/></button>
@@ -97,14 +102,23 @@ function DietChartContent() {
 
   if (!chart) return <main className="content">
     <PageHeader title="Diet chart" description="Plan what you eat across the week. Each day is split into five meals, so you can see your calories and macros before the day starts."/>
-    <section className="card max-w-lg p-6"><h2 className="font-display text-2xl font-bold">Create your first diet chart</h2><p className="mb-5 mt-1 text-sm text-slate-500">Give it a name and an optional daily calorie target. You’ll add meals next.</p><ChartForm onSubmit={(v) => createChart.mutate(v)} pending={createChart.isPending} submitLabel="Create diet chart"/></section>
+    <div className="grid max-w-5xl gap-5 lg:grid-cols-2">
+      <section className="card flex flex-col p-6" style={{ borderColor: "#bcc7f6" }}>
+        <span className="grid h-11 w-11 place-items-center rounded-xl bg-teal-600 text-white"><Sparkles size={21}/></span>
+        <h2 className="mt-4 font-display text-2xl font-bold">Plan it for me</h2>
+        <p className="mb-5 mt-1 text-sm text-slate-600">Answer a few questions about your body, workouts and what you usually eat. You’ll get a 7-day plan with foods from your region, two alternatives for every meal, and you can edit everything before saving.</p>
+        <Link href="/diet-chart/plan" className="btn btn-primary mt-auto"><Sparkles size={16}/>Start the diet planner</Link>
+      </section>
+      <section className="card p-6"><h2 className="font-display text-2xl font-bold">Or start blank</h2><p className="mb-5 mt-1 text-sm text-slate-500">Give it a name and an optional daily calorie target. You’ll add meals yourself.</p><ChartForm onSubmit={(v) => createChart.mutate(v)} pending={createChart.isPending} submitLabel="Create blank chart"/></section>
+    </div>
   </main>;
 
   return <main className="content">
     <PageHeader title="Diet chart" description="Your planned meals for the week. Edit or remove any meal from its card. On today’s meals, the tick logs it straight to your food diary."
       action={<>
         {list.length > 1 && <select className="input w-auto min-w-[12rem]" value={chart.id} onChange={(e) => setSelectedId(Number(e.target.value))} aria-label="Choose a diet chart">{list.map((c) => <option key={c.id} value={c.id}>{c.name}{c.is_active ? " (following)" : ""}</option>)}</select>}
-        <button className="btn btn-primary" onClick={() => setCreating(true)}><Plus size={16}/>New chart</button>
+        <button className="btn btn-ghost" onClick={() => setCreating(true)}><Plus size={16}/>Blank chart</button>
+        <Link href="/diet-chart/plan" className="btn btn-primary"><Sparkles size={16}/>Plan with AI</Link>
       </>}/>
 
     <section className="card mb-5 grid grid-cols-3 gap-x-4 gap-y-5 p-5 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-6">
@@ -142,6 +156,15 @@ function DietChartContent() {
       </BarChart></ResponsiveContainer></div> : <EmptyState title="No meals planned yet" detail="Add foods to any day on the board above and your weekly calorie picture appears here." action={<button className="btn btn-soft" onClick={() => openAdd(todayDay, "breakfast")}><Utensils size={15}/>Plan today’s breakfast</button>}/>}
     </section>
 
+    <Modal open={!!swapItem} title="Swap this meal" onClose={() => setSwapItem(null)}>
+      {swapItem && <div className="grid gap-2">
+        <p className="text-sm text-slate-500">Now: <b className="text-ink">{swapItem.food_name}</b> · {fmt(n(swapItem.calories))} kcal</p>
+        {swapItem.alternatives?.map((alt) => <button key={alt.id} disabled={swap.isPending} onClick={() => swap.mutate({ itemId: swapItem.id, altId: alt.id })} className="card flex items-center justify-between gap-3 p-3 text-left hover:border-teal-500">
+          <span><span className="block font-semibold">{alt.food_name}</span><span className="text-xs text-slate-500">{alt.portion ? `${alt.portion} · ` : ""}P {fmt(n(alt.protein_g))} · C {fmt(n(alt.carbs_g))} · F {fmt(n(alt.fat_g))}</span></span>
+          <span className="num shrink-0 font-bold">{fmt(n(alt.calories))} <span className="font-sans text-xs font-medium text-slate-500">kcal</span></span>
+        </button>)}
+      </div>}
+    </Modal>
     <Modal open={creating} title="New diet chart" onClose={() => setCreating(false)}><ChartForm onSubmit={(v) => createChart.mutate(v)} pending={createChart.isPending} submitLabel="Create diet chart"/></Modal>
     <Modal open={editingChart} title="Edit diet chart" onClose={() => setEditingChart(false)}>
       <ChartForm initial={chart} onSubmit={(v) => updateChart.mutate(v)} pending={updateChart.isPending} submitLabel="Save changes"/>

@@ -77,6 +77,19 @@ Open `https://fittrack.vercel.app`, choose **First time here? Set up the owner a
 
 ---
 
+## Optional — turn on AI diet planning
+
+The diet and workout planners (**Plan with AI** on the Diet chart and Workout chart pages) work without any key, using built-in food and exercise libraries. To have Claude write the plans instead:
+
+| # | Do this |
+|---|---|
+| 1 | Create an API key at **console.anthropic.com** → API Keys (needs billing set up; each plan costs a fraction of a rupee to a few rupees). |
+| 2 | Backend project → **Settings → Environment Variables** → add `ANTHROPIC_API_KEY` = your key. |
+| 3 | Optional: `FITTRACK_AI_MODEL` (default `claude-haiku-5-5`, the fastest). Use `claude-sonnet-5-5` for richer plans; it is slower. |
+| 4 | Redeploy the backend. The planner now shows **AI planning on**. |
+
+The key stays on the backend only; never add it to the website project. If the AI is slow or fails for a day, that day falls back to the built-in planner and the page says so.
+
 ## After it's live
 
 | Optional | How |
