@@ -23,7 +23,7 @@ from ...services import diet_planner, workout_planner
 
 router = APIRouter()
 
-
+# set
 def set_session(response: Response, user: User) -> str:
     token = create_access_token(user.id)
     csrf = secrets.token_urlsafe(32)
