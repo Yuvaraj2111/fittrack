@@ -43,7 +43,7 @@ const toggle = <T,>(list: T[], v: T) => list.includes(v) ? list.filter((x) => x 
 
 function Choice<T extends string>({ value, current, onPick, title, detail }: { value: T; current: T; onPick: (v: T) => void; title: string; detail?: string }) {
   const on = value === current;
-  return <button type="button" aria-pressed={on} onClick={() => onPick(value)} className={`rounded-xl border p-3.5 text-left transition-colors ${on ? "border-teal-600 bg-teal-50 shadow-[inset_0_0_0_1px_#2f4bd8]" : "border-slate-300 bg-white hover:border-teal-400"}`}>
+  return <button type="button" aria-pressed={on} onClick={() => onPick(value)} className={`rounded-xl border p-3.5 text-left transition-colors ${on ? "border-teal-600 bg-teal-50 shadow-[inset_0_0_0_1px_#1a7770]" : "border-slate-300 bg-white hover:border-teal-400"}`}>
     <span className="flex items-center justify-between gap-2 font-semibold">{title}{on && <Check size={16} className="text-teal-700"/>}</span>
     {detail && <span className="mt-0.5 block text-xs text-slate-500">{detail}</span>}
   </button>;
@@ -100,7 +100,7 @@ function Planner() {
         {meta.data && <span className="chip">{meta.data.ai_enabled ? <><Sparkles size={13} className="text-teal-700"/>AI planning on</> : "Built-in exercise planner"}</span>}
       </div>
 
-      {resumable && <div className="card mb-5 flex flex-wrap items-center justify-between gap-3 p-4" style={{ borderColor: "#bcc7f6" }}>
+      {resumable && <div className="card mb-5 flex flex-wrap items-center justify-between gap-3 p-4" style={{ borderColor: "#a6d0cc" }}>
         <p className="text-sm"><b>You have an unsaved plan</b> — “{resumable.name}”.</p>
         <div className="flex gap-2"><button className="btn btn-ghost px-3 py-1.5 text-sm" onClick={() => { writeDraft(null); setResumable(null); }}>Discard</button><button className="btn btn-primary px-3 py-1.5 text-sm" onClick={() => { setIntake(resumable.intake); setDraft(resumable); }}>Continue editing</button></div>
       </div>}
@@ -276,7 +276,7 @@ function DraftEditor({ draft, setDraft, focusOptions, onBack, onSaved }: { draft
         <ol className="grid gap-2">{dayItems.map((x, k) => <li key={x.key} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 gap-3"><span className="num mt-0.5 w-5 shrink-0 text-right text-sm font-bold text-slate-400">{k + 1}</span>
-              <div className="min-w-0"><p className="flex items-center gap-1.5 font-semibold leading-snug"><span className="dot" style={{ background: MUSCLE_COLOR[x.muscle_group] ?? "#8fa3b8" }} title={x.muscle_group}/>{x.exercise}</p>
+              <div className="min-w-0"><p className="flex items-center gap-1.5 font-semibold leading-snug"><span className="dot" style={{ background: MUSCLE_COLOR[x.muscle_group] ?? "#9aa9a5" }} title={x.muscle_group}/>{x.exercise}</p>
                 <p className="num text-sm text-slate-700">{prescription(x) || x.muscle_group}</p>{x.notes && <p className="text-xs text-slate-500">{x.notes}</p>}</div></div>
             <div className="flex shrink-0 gap-1"><button className="icon-btn" aria-label={`Edit ${x.exercise}`} onClick={() => setEdit(toEdit(x))}><Pencil size={14}/></button><button className="icon-btn danger" aria-label={`Remove ${x.exercise}`} onClick={() => update(draft.items.filter((y) => y.key !== x.key))}><Trash2 size={14}/></button></div>
           </div>
@@ -288,7 +288,7 @@ function DraftEditor({ draft, setDraft, focusOptions, onBack, onSaved }: { draft
     </section>
     <datalist id="focus-list">{focusOptions.map((f) => <option key={f} value={f}/>)}</datalist>
 
-    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 backdrop-blur min-[881px]:left-[15.5rem] max-[880px]:bottom-[3.9rem]">
+    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 backdrop-blur max-[880px]:bottom-[3.9rem]">
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-8">
         <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)}/>Follow this chart</label>
         <div className="flex gap-2"><button className="btn btn-ghost" onClick={() => { if (confirm("Discard this plan?")) { setDraft(null); onBack(); } }}>Discard</button>

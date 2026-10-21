@@ -1,8 +1,8 @@
 /** FitTrack by uv — mark + stacked wordmark. `tone` matches the background it sits on. */
 export function LogoMark({ size = 32 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" className="shrink-0">
-    <rect width="40" height="40" rx="9" fill="#2f4bd8"/>
-    <path d="M12 9h17v5.5H18v4h9v5.5h-9V31h-6z" fill="#fff"/>
+    <rect width="40" height="40" rx="11" fill="#f29f05"/>
+    <path d="M12 9h17v5.5H18v4h9v5.5h-9V31h-6z" fill="#10282b"/>
   </svg>;
 }
 
@@ -13,7 +13,7 @@ export function Logo({ tone = "dark", size = "md" }: { tone?: "dark" | "light"; 
     <LogoMark size={s.mark}/>
     <span className="flex flex-col leading-none">
       <span className={`font-display font-bold tracking-[.01em] ${s.word} ${onDark ? "text-white" : "text-ink"}`}>FitTrack</span>
-      <span className={`mt-[3px] font-medium ${s.by} ${onDark ? "text-[#8fa0b8]" : "text-slate-500"}`}>by uv</span>
+      <span className={`mt-[3px] font-medium ${s.by} ${onDark ? "text-[#f29f05]" : "text-slate-500"}`}>by uv</span>
     </span>
   </span>;
 }

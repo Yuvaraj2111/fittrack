@@ -1,4 +1,4 @@
-# FitTrack by uv
+# FitTrack
 
 FitTrack is a privacy-conscious personal fitness and health tracker. This repository currently delivers a tested, full-stack foundation and the first working vertical slices: owner setup, authenticated dashboard, food diary with Open Food Facts lookup, hydration, manual steps, weight history, workout session lifecycle with server-calculated duration, weekly diet and workout charts, supplements, medication records, goals, scheduled reminders, profile targets, and basic trends.
 
@@ -60,7 +60,7 @@ npm.cmd install
 npm.cmd run dev
 ```
 
-Open `http://localhost:3000`, choose **First time here**, and create the one owner account. Copy `.env.example` values into your environment before production use, particularly a long `FITTRACK_SECRET_KEY`.
+Open `http://localhost:3000`, choose **Create account**, and register. Each person gets a private account (see `FITTRACK_SIGNUP_MODE` in DEPLOY.md). Copy `.env.example` values into your environment before production use, particularly a long `FITTRACK_SECRET_KEY`.
 
 ## Food lookup and calculations
 

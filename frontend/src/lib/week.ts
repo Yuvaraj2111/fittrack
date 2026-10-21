@@ -12,11 +12,11 @@ export function todayKey(date = new Date()): Day {
 
 export const MUSCLE_GROUPS = ["chest", "back", "shoulders", "arms", "legs", "core", "full body", "cardio", "mobility"] as const;
 export const MUSCLE_COLOR: Record<string, string> = {
-  chest: "#2f4bd8", back: "#1fa37a", shoulders: "#8a5cf6", arms: "#f0a202", legs: "#e0445a",
-  core: "#0e9bb5", "full body": "#3c4859", cardio: "#f2709c", mobility: "#8fa3b8",
+  chest: "#1a7770", back: "#3e9b4f", shoulders: "#7c5cc4", arms: "#f29f05", legs: "#d6456a",
+  core: "#2e8bc0", "full body": "#364543", cardio: "#e77fa3", mobility: "#9aa9a5",
 };
 
-export const MACRO_COLOR = { protein: "#2f4bd8", carbs: "#f0a202", fat: "#e0445a", fiber: "#1fa37a" };
+export const MACRO_COLOR = { protein: "#1a7770", carbs: "#f29f05", fat: "#d6456a", fiber: "#3e9b4f" };
 
 export const n = (value: number | string | null | undefined) => Number(value ?? 0);
 export const fmt = (value: number) => new Intl.NumberFormat("en-IN").format(Math.round(value));

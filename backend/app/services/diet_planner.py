@@ -211,7 +211,7 @@ _FRACTION = {0.25: "¼", 0.5: "½", 0.75: "¾"}
 
 
 def _fmt_qty(x: float) -> str:
-    x = float(int(x + 0.5)) if x >= 3 else round(x * 4) / 4
+    x = float(int(x / 5 + 0.5) * 5) if x >= 20 else float(int(x + 0.5)) if x >= 3 else round(x * 4) / 4
     whole, frac = int(x), round(x - int(x), 2)
     return (str(whole) if whole else "") + _FRACTION.get(frac, "") or "¼"
 
