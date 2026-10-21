@@ -1,22 +1,22 @@
 import type { Config } from "tailwindcss";
 
-// The existing pages use `teal-*` and `emerald-*` utility classes as the brand colour.
-// Remapping those scales here re-themes every page at once without touching markup.
-const cobalt = { 50: "#eef1fd", 100: "#dde3fb", 200: "#bcc7f6", 300: "#93a3ef", 400: "#6a7ee6", 500: "#4a61df", 600: "#2f4bd8", 700: "#2539b0", 800: "#1e2e8a", 900: "#1a296e", 950: "#111a45" };
+// Pages use `teal-*`, `emerald-*` and `slate-*` utilities. Remapping those scales here
+// re-themes the whole app at once: teal = brand (temple-tank teal), slate = sage-tinted neutrals.
+const teal = { 50: "#eaf4f3", 100: "#d2e8e6", 200: "#a6d0cc", 300: "#72b2ac", 400: "#3e928b", 500: "#1a7770", 600: "#0f6560", 700: "#0c5450", 800: "#0b4542", 900: "#0a3936", 950: "#062321" };
+const slate = { 50: "#f4f7f6", 100: "#e8eeec", 200: "#d6dfdc", 300: "#bcc9c5", 400: "#8c9c98", 500: "#637571", 600: "#4b5c59", 700: "#364543", 800: "#24312f", 900: "#152120", 950: "#0b1514" };
 
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        teal: cobalt,
-        emerald: { ...cobalt, 100: "#d9e0ea", 200: "#b8c3d3", 900: "#2a3546" },
-        ink: "#18212e", chalk: "#eef1f4", cobalt: cobalt[600],
-        amberline: "#f0a202", roseline: "#e0445a", mintline: "#1fa37a",
+        teal, emerald: teal, slate,
+        ink: "#10282b", chalk: "#f3f5f2", cobalt: teal[600],
+        marigold: "#f29f05", amberline: "#f29f05", roseline: "#d6456a", mintline: "#3e9b4f",
       },
       fontFamily: {
-        sans: ["Barlow", "system-ui", "Segoe UI", "sans-serif"],
-        display: ["'Barlow Condensed'", "Barlow", "system-ui", "sans-serif"],
+        sans: ["Figtree", "system-ui", "Segoe UI", "sans-serif"],
+        display: ["'Bricolage Grotesque'", "Figtree", "system-ui", "sans-serif"],
       },
     },
   },

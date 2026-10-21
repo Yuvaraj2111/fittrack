@@ -53,7 +53,7 @@ function Workouts() {
         </article>) : <EmptyState title="No sessions yet" detail="Choose a workout above to start your training history."/>}</section>
       </div>
       <section className="card h-fit p-5"><h2 className="font-display text-xl font-bold">Training minutes</h2><p className="mb-4 text-sm text-slate-500">Completed sessions over the last 14 days.</p>
-        {totalMinutes ? <div className="h-72"><ResponsiveContainer><BarChart data={series} margin={{ left: -16, right: 8 }}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e3e8ee"/><XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} interval={1}/><YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12}/><Tooltip cursor={{ fill: "#eef1f4" }} formatter={(v: number) => [`${v} min`, "Training"]}/><Bar dataKey="minutes" fill="#2f4bd8" radius={[5, 5, 0, 0]}/></BarChart></ResponsiveContainer></div>
+        {totalMinutes ? <div className="h-72"><ResponsiveContainer><BarChart data={series} margin={{ left: -16, right: 8 }}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e9e6"/><XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} interval={1}/><YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12}/><Tooltip cursor={{ fill: "#eef3f1" }} formatter={(v: number) => [`${v} min`, "Training"]}/><Bar dataKey="minutes" fill="#1a7770" radius={[5, 5, 0, 0]}/></BarChart></ResponsiveContainer></div>
           : <EmptyState title="No finished sessions yet" detail="Finish a workout and your training minutes will chart here."/>}
       </section>
     </div>

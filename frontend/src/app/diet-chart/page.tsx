@@ -103,7 +103,7 @@ function DietChartContent() {
   if (!chart) return <main className="content">
     <PageHeader title="Diet chart" description="Plan what you eat across the week. Each day is split into five meals, so you can see your calories and macros before the day starts."/>
     <div className="grid max-w-5xl gap-5 lg:grid-cols-2">
-      <section className="card flex flex-col p-6" style={{ borderColor: "#bcc7f6" }}>
+      <section className="card flex flex-col p-6" style={{ borderColor: "#a6d0cc" }}>
         <span className="grid h-11 w-11 place-items-center rounded-xl bg-teal-600 text-white"><Sparkles size={21}/></span>
         <h2 className="mt-4 font-display text-2xl font-bold">Plan it for me</h2>
         <p className="mb-5 mt-1 text-sm text-slate-600">Answer a few questions about your body, workouts and what you usually eat. You’ll get a 7-day plan with foods from your region, two alternatives for every meal, and you can edit everything before saving.</p>
@@ -147,12 +147,12 @@ function DietChartContent() {
     <section className="card p-5">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2"><div><h2 className="font-display text-2xl font-bold">Calories by day</h2><p className="text-sm text-slate-500">Planned energy split by macronutrient{target ? "; the dashed line is your daily target" : ""}.</p></div></div>
       {plannedDays.length ? <div className="h-72"><ResponsiveContainer><BarChart data={macroKcal} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e3e8ee"/>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e9e6"/>
         <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={13}/><YAxis tickLine={false} axisLine={false} fontSize={12} width={52} tickCount={6} domain={[0, (max: number) => Math.ceil(Math.max(max, (target ?? 0) * 1.08) / 250) * 250]}/>
-        <Tooltip cursor={{ fill: "#eef1f4" }} formatter={(value: number, name: string) => [`${fmt(value)} kcal`, name]}/>
+        <Tooltip cursor={{ fill: "#eef3f1" }} formatter={(value: number, name: string) => [`${fmt(value)} kcal`, name]}/>
         <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }}/>
         <Bar dataKey="Protein" stackId="k" fill={MACRO_COLOR.protein}/><Bar dataKey="Carbs" stackId="k" fill={MACRO_COLOR.carbs}/><Bar dataKey="Fat" stackId="k" fill={MACRO_COLOR.fat} radius={[5, 5, 0, 0]}/>
-        {target && <ReferenceLine y={target} stroke="#18212e" strokeDasharray="5 4" label={{ value: `Target ${fmt(target)}`, position: "insideTopRight", fontSize: 12, fill: "#3c4859" }}/>}
+        {target && <ReferenceLine y={target} stroke="#10282b" strokeDasharray="5 4" label={{ value: `Target ${fmt(target)}`, position: "insideTopRight", fontSize: 12, fill: "#364543" }}/>}
       </BarChart></ResponsiveContainer></div> : <EmptyState title="No meals planned yet" detail="Add foods to any day on the board above and your weekly calorie picture appears here." action={<button className="btn btn-soft" onClick={() => openAdd(todayDay, "breakfast")}><Utensils size={15}/>Plan today’s breakfast</button>}/>}
     </section>
 

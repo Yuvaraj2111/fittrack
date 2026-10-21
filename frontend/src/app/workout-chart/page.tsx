@@ -93,7 +93,7 @@ function WorkoutChartContent() {
   if (!chart) return <main className="content">
     <PageHeader title="Workout chart" description="Lay out your training split across the week: what you train each day, the exercises, sets, reps and load."/>
     <div className="grid max-w-5xl gap-5 lg:grid-cols-2">
-      <section className="card flex flex-col p-6" style={{ borderColor: "#bcc7f6" }}>
+      <section className="card flex flex-col p-6" style={{ borderColor: "#a6d0cc" }}>
         <span className="grid h-11 w-11 place-items-center rounded-xl bg-teal-600 text-white"><Sparkles size={21}/></span>
         <h2 className="mt-4 font-display text-2xl font-bold">Plan it for me</h2>
         <p className="mb-5 mt-1 text-sm text-slate-600">Tell me your goal, which days you can train, how long, what equipment you have and any injuries. You’ll get a weekly split with sets, reps and rest, two alternatives for every exercise, and you can edit everything before saving.</p>
@@ -133,7 +133,7 @@ function WorkoutChartContent() {
         </header>
         <div className="flex-1 p-2">
           {dayItems.map((i) => <div className="plan-item" key={i.id}>
-            <p className="flex items-center gap-1.5 text-[.86rem] font-semibold leading-snug"><span className="dot" style={{ background: MUSCLE_COLOR[i.muscle_group] ?? "#8fa3b8" }} title={i.muscle_group}/>{i.exercise}</p>
+            <p className="flex items-center gap-1.5 text-[.86rem] font-semibold leading-snug"><span className="dot" style={{ background: MUSCLE_COLOR[i.muscle_group] ?? "#9aa9a5" }} title={i.muscle_group}/>{i.exercise}</p>
             <p className="num pl-[1.05rem] text-[.82rem] text-slate-600">{prescription(i) || i.muscle_group}</p>
             {i.notes && <p className="pl-[1.05rem] text-xs text-slate-500">{i.notes}</p>}
             {!!i.alternatives?.length && <button className="ml-[1.05rem] mt-1 inline-flex items-center gap-1 text-[.72rem] font-semibold text-teal-700 hover:underline" onClick={() => setSwapItem(i)}><Repeat size={11}/>{i.alternatives.length} swap{i.alternatives.length > 1 ? "s" : ""}</button>}
@@ -149,8 +149,8 @@ function WorkoutChartContent() {
     <section className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
       <div className="card p-5"><h2 className="font-display text-2xl font-bold">Sets by day</h2><p className="mb-4 text-sm text-slate-500">Planned working sets each day, coloured by muscle group.</p>
         {weeklySets ? <div className="h-72"><ResponsiveContainer><BarChart data={setsByDay} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e3e8ee"/><XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={13}/><YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12}/>
-          <Tooltip cursor={{ fill: "#eef1f4" }} formatter={(value: number, name: string) => [`${value} sets`, name]}/>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e9e6"/><XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={13}/><YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12}/>
+          <Tooltip cursor={{ fill: "#eef3f1" }} formatter={(value: number, name: string) => [`${value} sets`, name]}/>
           <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} formatter={(v: string) => v.charAt(0).toUpperCase() + v.slice(1)}/>
           {groupsInUse.map((g, index) => <Bar key={g} dataKey={g} stackId="s" fill={MUSCLE_COLOR[g]} radius={index === groupsInUse.length - 1 ? [5, 5, 0, 0] : 0}/>)}
         </BarChart></ResponsiveContainer></div> : <EmptyState title="No sets planned yet" detail="Add exercises with sets to see how your training load is spread across the week." action={<button className="btn btn-soft" onClick={() => openAdd(todayDay)}><Plus size={15}/>Add an exercise for today</button>}/>}
@@ -158,8 +158,8 @@ function WorkoutChartContent() {
       <div className="card p-5"><h2 className="font-display text-2xl font-bold">Muscle group balance</h2><p className="mb-4 text-sm text-slate-500">Total weekly sets per muscle group.</p>
         {balance.some((b) => b.sets) ? <div style={{ height: Math.max(180, balance.length * 38) }}><ResponsiveContainer><BarChart data={balance} layout="vertical" margin={{ top: 0, right: 24, left: 8, bottom: 0 }}>
           <XAxis type="number" allowDecimals={false} hide/><YAxis type="category" dataKey="group" tickLine={false} axisLine={false} width={84} fontSize={13} tickFormatter={(v: string) => v.charAt(0).toUpperCase() + v.slice(1)}/>
-          <Tooltip cursor={{ fill: "#eef1f4" }} formatter={(value: number) => [`${value} sets`, "Weekly"]}/>
-          <Bar dataKey="sets" radius={[0, 5, 5, 0]} barSize={18} label={{ position: "right", fontSize: 12, fill: "#3c4859" }}>{balance.map((b) => <Cell key={b.group} fill={MUSCLE_COLOR[b.group]}/>)}</Bar>
+          <Tooltip cursor={{ fill: "#eef3f1" }} formatter={(value: number) => [`${value} sets`, "Weekly"]}/>
+          <Bar dataKey="sets" radius={[0, 5, 5, 0]} barSize={18} label={{ position: "right", fontSize: 12, fill: "#364543" }}>{balance.map((b) => <Cell key={b.group} fill={MUSCLE_COLOR[b.group]}/>)}</Bar>
         </BarChart></ResponsiveContainer></div> : <EmptyState title="Nothing to compare yet" detail="Once exercises have sets, you’ll see which muscle groups get the most work."/>}
       </div>
     </section>
@@ -168,7 +168,7 @@ function WorkoutChartContent() {
       {swapItem && <div className="grid gap-2">
         <p className="text-sm text-slate-500">Now: <b className="text-ink">{swapItem.exercise}</b>{prescription(swapItem) ? ` · ${prescription(swapItem)}` : ""}</p>
         {swapItem.alternatives?.map((alt) => <button key={alt.id} disabled={swap.isPending} onClick={() => swap.mutate({ itemId: swapItem.id, altId: alt.id })} className="card flex items-center justify-between gap-3 p-3 text-left hover:border-teal-500">
-          <span className="min-w-0"><span className="flex items-center gap-1.5 font-semibold"><span className="dot" style={{ background: MUSCLE_COLOR[alt.muscle_group] ?? "#8fa3b8" }}/>{alt.exercise}</span>{alt.notes && <span className="block text-xs text-slate-500">{alt.notes}</span>}</span>
+          <span className="min-w-0"><span className="flex items-center gap-1.5 font-semibold"><span className="dot" style={{ background: MUSCLE_COLOR[alt.muscle_group] ?? "#9aa9a5" }}/>{alt.exercise}</span>{alt.notes && <span className="block text-xs text-slate-500">{alt.notes}</span>}</span>
           <span className="num shrink-0 text-sm font-semibold">{prescription(alt)}</span>
         </button>)}
       </div>}

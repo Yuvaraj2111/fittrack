@@ -11,7 +11,7 @@ from ...database import get_db
 from ...deps import CurrentUser, DbSession, MutationUser
 from ...models import DietChart, DietChartItem, DietIntake, DietItemAlternative, WorkoutIntake, WorkoutItemAlternative, WorkoutChart, WorkoutChartItem, Food, FoodLog, HydrationLog, Medication, Reminder, StepLog, Supplement, User, UserGoal, UserProfile, WeightLog, WorkoutSession
 from ...schemas import (ExternalFoodOut, FoodIn, FoodLogIn, FoodLogOut, FoodOut, GoalIn, GoalOut, HydrationIn,
-    HydrationOut, LoginIn, MedicationIn, MedicationOut, ProfileIn, ProfileOut, RegisterIn,
+    HydrationOut, LoginIn, PasswordChangeIn, AccountUpdateIn, MedicationIn, MedicationOut, ProfileIn, ProfileOut, RegisterIn,
     ReminderIn, ReminderOut, StepIn, StepOut, SupplementIn, SupplementOut, UserOut,
     WeightIn, WeightOut, WorkoutFinishIn, WorkoutIn, WorkoutOut,
     DietChartIn, DietChartItemIn, DietChartItemOut, DietChartOut,
@@ -23,7 +23,7 @@ from ...services import diet_planner, workout_planner
 
 router = APIRouter()
 
-# set
+
 def set_session(response: Response, user: User) -> str:
     token = create_access_token(user.id)
     csrf = secrets.token_urlsafe(32)
@@ -43,15 +43,40 @@ def get_owned_or_404(db: Session, model, user_id: int, record_id: int):
 
 @router.post("/auth/register", status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterIn, response: Response, db: DbSession):
-    # A personal install intentionally exposes setup only until its initial owner exists.
-    if db.scalar(select(func.count()).select_from(User)):
-        raise HTTPException(status_code=403, detail="Initial owner already configured; sign in instead")
+    settings = get_settings()
+    if settings.signup_mode == "closed":
+        raise HTTPException(status_code=403, detail="New accounts are not being accepted right now")
+    if settings.signup_mode == "code":
+        if not settings.signup_code or not secrets.compare_digest((payload.invite_code or "").strip(), settings.signup_code):
+            raise HTTPException(status_code=403, detail="That invite code isn't valid. Ask the person who shared FitTrack with you.")
+    email = str(payload.email).lower()
+    if db.scalar(select(User.id).where(User.email == email)):
+        raise HTTPException(status_code=409, detail="An account with this email already exists. Sign in instead.")
     user = User(email=str(payload.email).lower(), name=payload.name.strip(), password_hash=hash_password(payload.password))
     user.profile = UserProfile()
     db.add(user)
     db.commit()
     db.refresh(user)
     return {"user": UserOut.model_validate(user), "csrf_token": set_session(response, user)}
+
+
+@router.get("/auth/config")
+def auth_config():
+    return {"signup_mode": get_settings().signup_mode}
+
+
+@router.put("/auth/password", status_code=204)
+def change_password(payload: PasswordChangeIn, db: DbSession, user: MutationUser):
+    if not verify_password(payload.current_password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Your current password is incorrect")
+    user.password_hash = hash_password(payload.new_password)
+    db.commit()
+
+
+@router.put("/auth/account", response_model=UserOut)
+def update_account(payload: AccountUpdateIn, db: DbSession, user: MutationUser):
+    user.name = payload.name.strip()
+    db.commit(); db.refresh(user); return user
 
 
 @router.post("/auth/login")

@@ -9,7 +9,7 @@ import { AppShell } from "@/components/app-shell";
 import { LogoMark } from "@/components/logo";
 import { Modal } from "@/components/modal";
 import { ProgressBar } from "@/components/page";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
 import type { WorkoutChart } from "@/lib/charts";
 import { DAYS, DAY_LABEL, DAY_SHORT, MEAL_SLOTS, fmt, n, todayKey, type Day, type MealSlot } from "@/lib/week";
 
@@ -57,7 +57,7 @@ const sum = (items: Food[], k: keyof Omit<Food, "food_name" | "portion">) => ite
 // ------------------------------------------------------------ small parts
 function Choice<T extends string | number>({ value, current, onPick, title, detail }: { value: T; current: T; onPick: (v: T) => void; title: string; detail?: string }) {
   const on = value === current;
-  return <button type="button" aria-pressed={on} onClick={() => onPick(value)} className={`rounded-xl border p-3.5 text-left transition-colors ${on ? "border-teal-600 bg-teal-50 shadow-[inset_0_0_0_1px_#2f4bd8]" : "border-slate-300 bg-white hover:border-teal-400"}`}>
+  return <button type="button" aria-pressed={on} onClick={() => onPick(value)} className={`rounded-xl border p-3.5 text-left transition-colors ${on ? "border-teal-600 bg-teal-50 shadow-[inset_0_0_0_1px_#1a7770]" : "border-slate-300 bg-white hover:border-teal-400"}`}>
     <span className="flex items-center justify-between gap-2 font-semibold">{title}{on && <Check size={16} className="text-teal-700"/>}</span>
     {detail && <span className="mt-0.5 block text-xs text-slate-500">{detail}</span>}
   </button>;
@@ -90,7 +90,7 @@ function Planner() {
   }, [meta.data]);
   useEffect(() => { writeDraft(draft); }, [draft]);
 
-  const targets = useQuery({ queryKey: ["diet-targets", intake], queryFn: () => api<Targets>("/diet-planner/targets", { method: "POST", body: JSON.stringify(clean(intake)) }), enabled: step === 4 });
+  const targets = useQuery({ queryKey: ["diet-targets", intake], queryFn: () => api<Targets>("/diet-planner/targets", { method: "POST", body: JSON.stringify(clean(intake)) }), enabled: step === 4, retry: 1 });
   const workoutCharts = useQuery({ queryKey: ["workout-charts"], queryFn: () => api<WorkoutChart[]>("/workout-charts"), enabled: step === 1 });
   const generate = useMutation({
     mutationFn: () => api<Plan>("/diet-planner/generate", { method: "POST", body: JSON.stringify(clean(intake)) }),
@@ -125,7 +125,7 @@ function Planner() {
         {meta.data && <span className="chip">{meta.data.ai_enabled ? <><Sparkles size={13} className="text-teal-700"/>AI planning on</> : "Built-in regional planner"}</span>}
       </div>
 
-      {resumable && <div className="card mb-5 flex flex-wrap items-center justify-between gap-3 p-4" style={{ borderColor: "#bcc7f6" }}>
+      {resumable && <div className="card mb-5 flex flex-wrap items-center justify-between gap-3 p-4" style={{ borderColor: "#a6d0cc" }}>
         <p className="text-sm"><b>You have an unsaved plan</b> — “{resumable.name}”.</p>
         <div className="flex gap-2"><button className="btn btn-ghost px-3 py-1.5 text-sm" onClick={() => { writeDraft(null); setResumable(null); }}>Discard</button><button className="btn btn-primary px-3 py-1.5 text-sm" onClick={() => { setIntake(resumable.intake); setDraft(resumable); }}>Continue editing</button></div>
       </div>}
@@ -202,7 +202,12 @@ function Planner() {
       {step === 4 && <section>
         <Coach><b>Here’s what I worked out.</b> Check it over, then I’ll plan your week.</Coach>
         <div className="card p-5">
-          {targets.isLoading || !targets.data ? <div className="h-40 animate-pulse rounded-xl bg-slate-100"/> : <>
+          {targets.isError ? <div className="rounded-xl bg-rose-50 p-4 text-sm text-rose-900" role="alert">
+            <p className="font-semibold">Couldn’t calculate your targets{targets.error instanceof ApiError ? ` (error ${targets.error.status})` : ""}.</p>
+            <p className="mt-1">{targets.error instanceof ApiError && targets.error.status === 404 ? "The API doesn’t have the diet planner yet. Check that the latest backend deployment on Vercel finished successfully." : (targets.error as Error).message}</p>
+            <button className="btn btn-ghost mt-3 bg-white" onClick={() => targets.refetch()}><RefreshCw size={14}/>Try again</button>
+            <p className="mt-2 text-xs text-rose-800">You can still press <b>Create my diet plan</b>; it works out the targets itself.</p>
+          </div> : targets.isLoading || !targets.data ? <div className="h-40 animate-pulse rounded-xl bg-slate-100"/> : <>
             <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
               <div><p className="text-sm text-slate-500">Daily target</p><p className="stat-value text-teal-700">{fmt(targets.data.calories)}<span className="stat-unit">kcal</span></p></div>
               <div><p className="text-sm text-slate-500">Maintenance</p><p className="stat-value">{fmt(targets.data.tdee)}<span className="stat-unit">kcal</span></p></div>
@@ -227,7 +232,7 @@ function Planner() {
       <div className="mt-6 flex items-center justify-between gap-3">
         <button className="btn btn-ghost" disabled={step === 0} onClick={() => setStep(step - 1)}><ArrowLeft size={16}/>Back</button>
         {step < 4 ? <button className="btn btn-primary" disabled={!canNext} onClick={() => setStep(step + 1)}>Next<ArrowRight size={16}/></button>
-          : <button className="btn btn-primary px-5" disabled={!targets.data} onClick={() => generate.mutate()}><Sparkles size={16}/>Create my diet plan</button>}
+          : <button className="btn btn-primary px-5" disabled={targets.isLoading} onClick={() => generate.mutate()}><Sparkles size={16}/>Create my diet plan</button>}
       </div>
     </div>
   </main>;
@@ -322,7 +327,7 @@ function DraftEditor({ draft, setDraft, onBack, onSaved }: { draft: Draft; setDr
       })}</div>
     </section>
 
-    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 backdrop-blur min-[881px]:left-[15.5rem] max-[880px]:bottom-[3.9rem]">
+    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 backdrop-blur max-[880px]:bottom-[3.9rem]">
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-8">
         <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
           <label className="inline-flex items-center gap-2"><input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)}/>Follow this chart</label>

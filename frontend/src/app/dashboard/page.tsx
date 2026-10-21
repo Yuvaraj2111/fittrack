@@ -17,7 +17,7 @@ type Trend = { date: string; calories: number; protein_g: number };
 
 function MetricCard({ icon, label, value, target, unit, color, accent, decimals = 0 }: { icon: React.ReactNode; label: string; value: number; target?: number; unit: string; color: string; accent: string; decimals?: number }) {
   const pct = target ? Math.round((value / target) * 100) : null;
-  return <section className="card p-5">
+  return <section className="card p-4 sm:p-5">
     <div className="flex items-center justify-between"><p className="text-sm font-medium text-slate-500">{label}</p><span style={{ color: accent }}>{icon}</span></div>
     <p className="mt-2 stat-value">{value ? (decimals ? value.toFixed(decimals) : fmt(value)) : target ? "0" : "—"}<span className="stat-unit">{unit}</span></p>
     {target ? <div className="mt-4"><ProgressBar value={value} max={target} color={color}/><p className="mt-2 text-xs text-slate-500"><span className="num font-semibold text-slate-700">{pct}%</span> of {fmt(target)} {unit}</p></div>
@@ -46,7 +46,7 @@ function TodaysPlan() {
       <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><ClipboardList size={19} className="text-teal-600"/><h2 className="font-display text-xl font-bold">Today’s training{workoutChart?.day_focus[day] ? `: ${workoutChart.day_focus[day]}` : ""}</h2></div><Link href="/workout-chart" className="text-sm font-semibold text-teal-700 hover:underline">Workout chart</Link></div>
       {!workoutChart ? <EmptyState title="No workout chart yet" detail="Set up your weekly split and today’s exercises will appear here." action={<Link className="btn btn-soft" href="/workout-chart">Create a workout chart</Link>}/>
         : !exercises.length ? <p className="rounded-lg bg-slate-50 p-4 text-sm text-slate-500">Rest day in “{workoutChart.name}”. Recovery counts too.</p>
-        : <ul className="divide-y divide-slate-100">{exercises.map((e) => <li key={e.id} className="flex items-center gap-3 py-2.5"><span className="dot" style={{ background: MUSCLE_COLOR[e.muscle_group] ?? "#8fa3b8" }}/><span className="min-w-0 flex-1 text-sm font-medium">{e.exercise}</span><span className="num shrink-0 text-sm text-slate-600">{prescription(e)}</span></li>)}</ul>}
+        : <ul className="divide-y divide-slate-100">{exercises.map((e) => <li key={e.id} className="flex items-center gap-3 py-2.5"><span className="dot" style={{ background: MUSCLE_COLOR[e.muscle_group] ?? "#9aa9a5" }}/><span className="min-w-0 flex-1 text-sm font-medium">{e.exercise}</span><span className="num shrink-0 text-sm text-slate-600">{prescription(e)}</span></li>)}</ul>}
     </div>
   </section>;
 }
@@ -66,11 +66,11 @@ function DashboardContent() {
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   return <main className="content">
     <PageHeader title={greeting} description={`Today’s routine is ${completion}% complete across food, steps and water.`} action={<button className="btn btn-primary" onClick={() => document.getElementById("quick-meal")?.scrollIntoView({ behavior: "smooth" })}><Plus size={16}/>Log a meal</button>}/>
-    <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <MetricCard icon={<Utensils size={19}/>} label="Energy" value={nutrition.calories} target={goals.calories} unit="kcal" color="bg-amberline" accent="#f0a202"/>
-      <MetricCard icon={<Footprints size={19}/>} label="Steps" value={data.steps} target={goals.steps} unit="steps" color="bg-teal-600" accent="#2f4bd8"/>
-      <MetricCard icon={<Droplets size={19}/>} label="Water" value={data.hydration_ml} target={goals.hydration_ml} unit="ml" color="bg-mintline" accent="#1fa37a"/>
-      <MetricCard icon={<Scale size={19}/>} label="Weight" value={data.latest_weight_kg ?? 0} unit="kg" color="" accent="#3c4859" decimals={1}/>
+    <section className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+      <MetricCard icon={<Utensils size={19}/>} label="Energy" value={nutrition.calories} target={goals.calories} unit="kcal" color="bg-amberline" accent="#f29f05"/>
+      <MetricCard icon={<Footprints size={19}/>} label="Steps" value={data.steps} target={goals.steps} unit="steps" color="bg-teal-600" accent="#1a7770"/>
+      <MetricCard icon={<Droplets size={19}/>} label="Water" value={data.hydration_ml} target={goals.hydration_ml} unit="ml" color="bg-mintline" accent="#3e9b4f"/>
+      <MetricCard icon={<Scale size={19}/>} label="Weight" value={data.latest_weight_kg ?? 0} unit="kg" color="" accent="#364543" decimals={1}/>
     </section>
     <TodaysPlan/>
     <section className="mb-6 grid gap-4 xl:grid-cols-[1.45fr_.9fr]">
@@ -83,7 +83,7 @@ function DashboardContent() {
     </section>
     <section className="mb-6 grid gap-4 xl:grid-cols-[1.35fr_.65fr]">
       <div className="card p-5"><h2 className="font-display text-xl font-bold">Calories this week</h2><p className="mb-4 text-sm text-slate-500">From your food diary; the dashed line is your daily target.</p>
-        {trend.data?.length ? <div className="h-60"><ResponsiveContainer><BarChart data={trend.data} margin={{ left: -12, right: 8 }}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e3e8ee"/><XAxis dataKey="date" tickFormatter={(v) => format(new Date(String(v) + "T00:00:00"), "EEE d")} tickLine={false} axisLine={false} fontSize={12}/><YAxis tickLine={false} axisLine={false} fontSize={12}/><Tooltip cursor={{ fill: "#eef1f4" }} formatter={(v: number) => [`${fmt(v)} kcal`, "Calories"]}/><ReferenceLine y={goals.calories} stroke="#18212e" strokeDasharray="5 4"/><Bar dataKey="calories" fill="#f0a202" radius={[5, 5, 0, 0]}/></BarChart></ResponsiveContainer></div> : <EmptyState title="No meal trend yet" detail="Log a meal to begin your weekly view."/>}</div>
+        {trend.data?.length ? <div className="h-60"><ResponsiveContainer><BarChart data={trend.data} margin={{ left: -12, right: 8 }}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e9e6"/><XAxis dataKey="date" tickFormatter={(v) => format(new Date(String(v) + "T00:00:00"), "EEE d")} tickLine={false} axisLine={false} fontSize={12}/><YAxis tickLine={false} axisLine={false} fontSize={12}/><Tooltip cursor={{ fill: "#eef3f1" }} formatter={(v: number) => [`${fmt(v)} kcal`, "Calories"]}/><ReferenceLine y={goals.calories} stroke="#10282b" strokeDasharray="5 4"/><Bar dataKey="calories" fill="#f29f05" radius={[5, 5, 0, 0]}/></BarChart></ResponsiveContainer></div> : <EmptyState title="No meal trend yet" detail="Log a meal to begin your weekly view."/>}</div>
       <div className="card p-5"><div className="flex items-center justify-between"><h2 className="font-display text-xl font-bold">Sessions today</h2><Dumbbell size={19} className="text-teal-600"/></div>
         {data.workouts.length ? <div className="mt-4 space-y-2">{data.workouts.map((w) => <div className="card-flat flex items-center justify-between p-3" key={w.id}><p className="font-medium">{w.name}</p><span className={`chip ${w.status === "completed" ? "bg-teal-50 text-teal-700" : ""}`}>{w.status === "completed" ? `${w.duration_minutes ?? 0} min` : "In progress"}</span></div>)}</div>
           : <div className="mt-4"><EmptyState title="No session logged" detail="Start one from your workout chart or the Workouts page." action={<Link href="/workouts" className="btn btn-soft">Open workouts</Link>}/></div>}</div>

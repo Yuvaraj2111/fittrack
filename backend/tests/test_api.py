@@ -59,3 +59,36 @@ def test_workout_chart_and_finish_duration():
         session = client.post("/api/v1/workout-sessions", headers=headers, json={"name": "Push", "local_date": "2026-10-03"}).json()
         finished = client.post(f"/api/v1/workout-sessions/{session['id']}/finish", headers=headers, json={"total_volume_kg": 1200})
         assert finished.status_code == 200 and finished.json()["duration_minutes"] == 0
+
+
+def test_multiple_users_are_isolated():
+    with TestClient(app) as a, TestClient(app) as b:
+        ra = a.post("/api/v1/auth/register", json={"name": "Asha", "email": "asha@example.com", "password": "long-enough-password"})
+        rb = b.post("/api/v1/auth/register", json={"name": "Bala", "email": "bala@example.com", "password": "long-enough-password"})
+        assert ra.status_code == 201 and rb.status_code == 201
+        dup = b.post("/api/v1/auth/register", json={"name": "X", "email": "ASHA@example.com", "password": "long-enough-password"})
+        assert dup.status_code == 409
+        ha, hb = {"X-CSRF-Token": ra.cookies.get("csrf_token")}, {"X-CSRF-Token": rb.cookies.get("csrf_token")}
+        chart = a.post("/api/v1/diet-charts", headers=ha, json={"name": "Asha plan"}).json()
+        assert b.get("/api/v1/diet-charts").json() == []
+        assert b.delete(f"/api/v1/diet-charts/{chart['id']}", headers=hb).status_code == 404
+        assert b.post(f"/api/v1/diet-charts/{chart['id']}/items", headers=hb, json={"day": "mon", "meal_slot": "lunch", "food_name": "x"}).status_code == 404
+        assert a.put("/api/v1/auth/password", headers=ha, json={"current_password": "wrong", "new_password": "another-long-password"}).status_code == 400
+        assert a.put("/api/v1/auth/password", headers=ha, json={"current_password": "long-enough-password", "new_password": "another-long-password"}).status_code == 204
+        login = a.post("/api/v1/auth/login", json={"email": "asha@example.com", "password": "another-long-password"})
+        assert login.status_code == 200
+        ha = {"X-CSRF-Token": login.cookies.get("csrf_token")}  # a new session rotates the CSRF token
+        assert a.put("/api/v1/auth/account", headers=ha, json={"name": "Asha K"}).json()["name"] == "Asha K"
+
+
+def test_signup_modes(monkeypatch):
+    from app.core.config import get_settings
+    s = get_settings()
+    with TestClient(app) as c:
+        monkeypatch.setattr(s, "signup_mode", "code"); monkeypatch.setattr(s, "signup_code", "uv-2026")
+        assert c.get("/api/v1/auth/config").json() == {"signup_mode": "code"}
+        body = {"name": "C", "email": "c@example.com", "password": "long-enough-password"}
+        assert c.post("/api/v1/auth/register", json=body).status_code == 403
+        assert c.post("/api/v1/auth/register", json={**body, "invite_code": "uv-2026"}).status_code == 201
+        monkeypatch.setattr(s, "signup_mode", "closed")
+        assert c.post("/api/v1/auth/register", json={**body, "email": "d@example.com"}).status_code == 403

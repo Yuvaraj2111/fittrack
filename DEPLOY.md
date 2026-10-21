@@ -69,11 +69,9 @@ Tables are created automatically on the first request. Nothing to run by hand.
 | 3 | Environment Variables | `API_ORIGIN` = your API URL from step 1, e.g. `https://fittrack-api.vercel.app` (no trailing slash, no `/api/v1`). |
 | 4 | **Deploy** | |
 
-## Step 4 — Create your account straight away
+## Step 4 — Create your account
 
-Open `https://fittrack.vercel.app`, choose **First time here? Set up the owner account**, and register.
-
-> Owner setup is open to anyone **until the first account exists**, then it locks. Do this immediately after deploying, before sharing the link.
+Open your site, choose **Create account**, and register. Anyone you share the link with can create their own private account; nobody can see anyone else's data.
 
 ---
 
@@ -89,6 +87,18 @@ The diet and workout planners (**Plan with AI** on the Diet chart and Workout ch
 | 4 | Redeploy the backend. The planner now shows **AI planning on**. |
 
 The key stays on the backend only; never add it to the website project. If the AI is slow or fails for a day, that day falls back to the built-in planner and the page says so.
+
+## Who can sign up
+
+Set this on the **backend** project (Settings → Environment Variables), then redeploy:
+
+| `FITTRACK_SIGNUP_MODE` | Effect |
+|---|---|
+| `open` (default) | Anyone with the link can create an account |
+| `code` | People need an invite code to sign up. Also set `FITTRACK_SIGNUP_CODE` to the code you'll share. |
+| `closed` | No new accounts. Existing users can still sign in. |
+
+Each person can change their name and password under **Review → Settings**.
 
 ## After it's live
 
@@ -124,7 +134,7 @@ vercel --prod
 | Website build fails: *API_ORIGIN is not set* | Missing variable on `fittrack` | Add `API_ORIGIN` (Step 3), then redeploy. |
 | API shows *FUNCTION_INVOCATION_FAILED* | No database or weak secret | Check **Logs**. Confirm `DATABASE_URL` exists (Step 2) and the secret is 32+ characters. Redeploy. |
 | Sign-in returns to the login page | Website can't reach the API | Visit `API_ORIGIN` + `/health`. Fix the URL, then redeploy the website (rewrites are fixed at build time). |
-| *Initial owner already configured* | An account already exists | Sign in instead. To start over, in Neon's SQL editor run `DELETE FROM users;` (this deletes all data). |
+| *An account with this email already exists* | That email is registered | Sign in instead, or use another email. |
 | First request after a while takes 1–3 s | Function and Neon cold start | Normal on free plans. |
 
 ## What changed for Vercel
